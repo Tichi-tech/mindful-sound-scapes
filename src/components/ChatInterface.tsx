@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -22,7 +24,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSoundRecommendat
     {
       id: '1',
       type: 'ai',
-      content: "Hello! I'm your meditation AI assistant. Tell me how you're feeling today or what kind of meditation experience you're looking for, and I'll create the perfect soundscape for you.",
+      content: "Hello! I'm Tichi, your AI meditation assistant. Tell me how you're feeling today or what kind of meditation experience you're looking for, and I'll create the perfect soundscape for you.",
       timestamp: new Date()
     }
   ]);
@@ -49,32 +51,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSoundRecommendat
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual OpenAI integration)
-    setTimeout(() => {
-      const aiResponses = [
-        "I understand you're looking for relaxation. I recommend starting with ocean waves combined with soft piano melodies. This combination helps reduce cortisol levels and promotes deep relaxation.",
-        "For focus and concentration, I suggest binaural beats at 40Hz with gentle forest sounds. This frequency enhances cognitive function and maintains alertness.",
-        "Based on your stress levels, I'm creating a soundscape with rain sounds, Tibetan singing bowls, and soft ambient drones. This will help activate your parasympathetic nervous system.",
-        "For sleep preparation, I recommend starting with nature sounds that gradually transition to pure silence. This helps your mind naturally wind down.",
-      ];
+    try {
+      console.log('Sending message to AI:', currentInput);
+      
+      // Prepare conversation history for context
+      const conversationHistory = messages.map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          message: currentInput,
+          conversationHistory: conversationHistory
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('AI response received:', data);
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: aiResponses[Math.floor(Math.random() * aiResponses.length)],
+        content: data.message,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
+
+      // Handle sound recommendation if provided
+      if (data.recommendedSound) {
+        console.log('Sound recommended:', data.recommendedSound);
+        onSoundRecommendation(data.recommendedSound);
+        toast.success('I\'ve selected a sound that matches your needs!');
+      }
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
       
-      // Simulate sound recommendation
-      const sounds = ['ocean-waves', 'forest-rain', 'tibetan-bowls', 'binaural-focus'];
-      onSoundRecommendation(sounds[Math.floor(Math.random() * sounds.length)]);
-    }, 2000);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      toast.error('Failed to get AI response. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -93,7 +127,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSoundRecommendat
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">AI Meditation Assistant</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Tichi - AI Meditation Assistant</h2>
               <p className="text-sm text-gray-600">Tell me what you need, and I'll create the perfect soundscape</p>
             </div>
           </div>
@@ -152,7 +186,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSoundRecommendat
                   <div className="bg-gray-100 px-4 py-2 rounded-2xl">
                     <div className="flex items-center space-x-2">
                       <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
-                      <span className="text-sm text-gray-600">AI is thinking...</span>
+                      <span className="text-sm text-gray-600">Tichi is thinking...</span>
                     </div>
                   </div>
                 </div>
