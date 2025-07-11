@@ -1,18 +1,18 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, MessageCircle, Music, Sparkles } from 'lucide-react';
+import { Home, Wand2, Music, Sparkles } from 'lucide-react';
 
 interface NavigationProps {
-  currentView: 'home' | 'chat' | 'library';
-  onViewChange: (view: 'home' | 'chat' | 'library') => void;
+  currentView: 'home' | 'generate' | 'library';
+  onViewChange: (view: 'home' | 'generate' | 'library') => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) => {
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
-    { id: 'library', label: 'Sound Library', icon: Music },
+    { id: 'generate', label: 'Generate', icon: Wand2 },
+    { id: 'library', label: 'My Music', icon: Music },
   ];
 
   return (

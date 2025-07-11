@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Navigation } from '@/components/Navigation';
-import { ChatInterface } from '@/components/ChatInterface';
+import { MusicGenerator } from '@/components/MusicGenerator';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { MeditationLibrary } from '@/components/MeditationLibrary';
 import { Hero } from '@/components/Hero';
 
 const Index = () => {
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'chat' | 'library'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'generate' | 'library'>('home');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -23,7 +23,7 @@ const Index = () => {
         >
           {currentView === 'home' && (
             <div className="space-y-8">
-              <Hero onStartChat={() => setCurrentView('chat')} />
+              <Hero onStartChat={() => setCurrentView('generate')} />
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <MeditationLibrary 
@@ -38,16 +38,14 @@ const Index = () => {
             </div>
           )}
           
-          {currentView === 'chat' && (
-            <div className="max-w-4xl mx-auto">
-              <ChatInterface onSoundRecommendation={setSelectedSound} />
-            </div>
+          {currentView === 'generate' && (
+            <MusicGenerator />
           )}
           
           {currentView === 'library' && (
             <div className="max-w-6xl mx-auto">
               <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-                Meditation Sound Library
+                My Generated Music
               </h1>
               <div className="grid md:grid-cols-3 gap-8">
                 <div className="md:col-span-2">
