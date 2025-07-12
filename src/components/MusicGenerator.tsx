@@ -104,6 +104,31 @@ export const MusicGenerator: React.FC = () => {
     }
   };
 
+  const playAudio = (url: string) => {
+    try {
+      const audio = new Audio(url);
+      audio.play().catch((error) => {
+        console.error('Error playing audio:', error);
+        toast.error('Unable to play audio. Please try downloading the file.');
+      });
+    } catch (error) {
+      console.error('Error creating audio element:', error);
+      toast.error('Unable to play audio. Please try downloading the file.');
+    }
+  };
+
+  const downloadAudio = (url: string, filename: string) => {
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.wav`;
+      link.click();
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+      toast.error('Unable to download audio file.');
+    }
+  };
+
   const pollTrackStatus = async (trackId: string) => {
     const maxAttempts = 60; // Poll for up to 5 minutes
     let attempts = 0;
@@ -290,10 +315,22 @@ export const MusicGenerator: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-600 hover:text-blue-600"
+                          onClick={() => track.url && playAudio(track.url)}
+                          disabled={!track.url}
+                        >
                           <Play className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-600 hover:text-green-600"
+                          onClick={() => track.url && downloadAudio(track.url, track.title)}
+                          disabled={!track.url}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
