@@ -56,32 +56,42 @@ export const MusicGenerator: React.FC = () => {
 
     setIsGenerating(true);
     
-    const newTrack: GeneratedTrack = {
-      id: Date.now().toString(),
-      title: title || `Healing Music ${generatedTracks.length + 1}`,
-      prompt,
-      duration,
-      style,
-      isGenerating: true,
-      timestamp: new Date()
-    };
-
-    setGeneratedTracks(prev => [newTrack, ...prev]);
-
     try {
-      // Simulate music generation API call
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Update track as completed
-      setGeneratedTracks(prev => 
-        prev.map(track => 
-          track.id === newTrack.id 
-            ? { ...track, isGenerating: false, url: `/generated-music/${track.id}.mp3` }
-            : track
-        )
-      );
+      // Call the Supabase edge function to generate music
+      const { data, error } = await supabase.functions.invoke('generate-music', {
+        body: {
+          prompt,
+          title: title || `Healing Music ${generatedTracks.length + 1}`,
+          style,
+          duration
+        }
+      });
 
-      toast.success('Your healing music has been generated!');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to start music generation');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Music generation failed');
+      }
+
+      const newTrack: GeneratedTrack = {
+        id: data.trackId,
+        title: title || `Healing Music ${generatedTracks.length + 1}`,
+        prompt,
+        duration,
+        style,
+        isGenerating: true,
+        timestamp: new Date()
+      };
+
+      setGeneratedTracks(prev => [newTrack, ...prev]);
+      
+      toast.success('Music generation started! This may take a few moments...');
+      
+      // Start polling for completion
+      pollTrackStatus(data.trackId);
       
       // Clear form
       setPrompt('');
@@ -89,12 +99,61 @@ export const MusicGenerator: React.FC = () => {
     } catch (error) {
       console.error('Error generating music:', error);
       toast.error('Failed to generate music. Please try again.');
-      
-      // Remove failed track
-      setGeneratedTracks(prev => prev.filter(track => track.id !== newTrack.id));
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const pollTrackStatus = async (trackId: string) => {
+    const maxAttempts = 60; // Poll for up to 5 minutes
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const { data: track, error } = await supabase
+          .from('generated_tracks')
+          .select('*')
+          .eq('id', trackId)
+          .single();
+
+        if (error) {
+          console.error('Error polling track status:', error);
+          return;
+        }
+
+        setGeneratedTracks(prev => 
+          prev.map(t => 
+            t.id === trackId 
+              ? { 
+                  ...t, 
+                  isGenerating: track.status === 'generating' || track.status === 'loading_model',
+                  url: track.audio_url 
+                }
+              : t
+          )
+        );
+
+        if (track.status === 'completed') {
+          toast.success('Your healing music is ready!');
+          return;
+        } else if (track.status === 'failed') {
+          toast.error('Music generation failed. Please try again.');
+          return;
+        } else if (track.status === 'loading_model') {
+          toast.info('Model is loading, please wait...');
+        }
+
+        // Continue polling if still generating
+        attempts++;
+        if (attempts < maxAttempts && (track.status === 'generating' || track.status === 'loading_model')) {
+          setTimeout(poll, 5000); // Poll every 5 seconds
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    };
+
+    poll();
   };
 
   return (
