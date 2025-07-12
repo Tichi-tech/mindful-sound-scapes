@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Music, Clock, Sparkles, Play, Download, Heart } from 'lucide-react';
+import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ChatInterface } from './chat/ChatInterface';
 
 interface GeneratedTrack {
   id: string;
@@ -28,6 +29,7 @@ export const MusicGenerator: React.FC = () => {
   const [duration, setDuration] = useState('2-3');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
+  const [showChat, setShowChat] = useState(false);
 
   const styles = [
     { value: 'ambient', label: 'Ambient Healing' },
@@ -181,15 +183,52 @@ export const MusicGenerator: React.FC = () => {
     poll();
   };
 
+  const handleChatEnrichment = (enrichedPrompt: string) => {
+    setPrompt(enrichedPrompt);
+    setShowChat(false);
+    toast.success('Prompt enriched by Indara AI! You can now generate your music.');
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Generator Interface */}
-      <Card className="p-8 bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
-        <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold text-gray-800">Generate Healing Music</h2>
-            <p className="text-gray-600">Describe your vision and let AI create the perfect healing soundscape</p>
+      {/* AI Chat Interface */}
+      {showChat ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-gray-800">AI Prompt Enhancement</h2>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowChat(false)}
+              className="border-gray-300"
+            >
+              Back to Generator
+            </Button>
           </div>
+          <ChatInterface onSoundRecommendation={handleChatEnrichment} />
+        </motion.div>
+      ) : (
+        <>
+          {/* Generator Interface */}
+          <Card className="p-8 bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl font-bold text-gray-800">Generate Healing Music</h2>
+                <p className="text-gray-600">Describe your vision and let AI create the perfect healing soundscape</p>
+                <div className="flex justify-center gap-3 mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowChat(true)}
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Bot className="w-4 h-4 mr-2" />
+                    Get AI Help with Prompt
+                  </Button>
+                </div>
+              </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -372,7 +411,9 @@ export const MusicGenerator: React.FC = () => {
             </Button>
           ))}
         </div>
-      </Card>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
