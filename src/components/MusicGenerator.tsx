@@ -108,7 +108,12 @@ export const MusicGenerator: React.FC = () => {
 
   const playAudio = (url: string) => {
     try {
+      console.log('Attempting to play audio from URL:', url);
       const audio = new Audio(url);
+      audio.addEventListener('loadstart', () => console.log('Audio loading started'));
+      audio.addEventListener('canplay', () => console.log('Audio can start playing'));
+      audio.addEventListener('error', (e) => console.error('Audio element error:', e));
+      
       audio.play().catch((error) => {
         console.error('Error playing audio:', error);
         toast.error('Unable to play audio. Please try downloading the file.');
@@ -141,12 +146,19 @@ export const MusicGenerator: React.FC = () => {
           .from('generated_tracks')
           .select('*')
           .eq('id', trackId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error polling track status:', error);
           return;
         }
+
+        if (!track) {
+          console.error('Track not found:', trackId);
+          return;
+        }
+
+        console.log('Track status update:', { id: trackId, status: track.status, audio_url: track.audio_url });
 
         setGeneratedTracks(prev => 
           prev.map(t => 

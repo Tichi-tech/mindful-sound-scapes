@@ -99,14 +99,26 @@ async function generateMusicBackground(trackId: string, prompt: string, style: s
     if (!response.ok) {
       const errorText = await response.text();
       console.error('MusicGen API error:', response.status, errorText);
+      
+      // If model is loading, update status and retry later
+      if (response.status === 503) {
+        await supabase
+          .from('generated_tracks')
+          .update({ status: 'loading_model' })
+          .eq('id', trackId);
+        
+        // Retry after 20 seconds
+        setTimeout(() => generateMusicBackground(trackId, prompt, style, duration), 20000);
+        return;
+      }
+      
       throw new Error(`MusicGen API error: ${response.status} ${errorText}`);
     }
 
     const audioData = new Uint8Array(await response.arrayBuffer());
-    
     console.log('Generated audio data size:', audioData.length);
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage with correct content type
     const fileName = `${trackId}.wav`;
     const { error: uploadError } = await supabase.storage
       .from('generated-music')
@@ -119,11 +131,11 @@ async function generateMusicBackground(trackId: string, prompt: string, style: s
       console.error('Storage upload error:', uploadError);
       throw new Error('Failed to upload audio file');
     }
-
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('generated-music')
       .getPublicUrl(fileName);
+
 
     // Update track with audio URL and completed status
     const { error: updateError } = await supabase
