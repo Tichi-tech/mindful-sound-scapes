@@ -16,7 +16,7 @@ export const LoadingIndicator: React.FC = () => {
         <div className="bg-gray-100 px-4 py-2 rounded-2xl">
           <div className="flex items-center space-x-2">
             <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
-            <span className="text-sm text-gray-600">Tichi is thinking...</span>
+            <span className="text-sm text-gray-600">Indara is thinking...</span>
           </div>
         </div>
       </div>

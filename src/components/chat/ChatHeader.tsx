@@ -8,7 +8,7 @@ export const ChatHeader: React.FC = () => {
         <Bot className="w-5 h-5 text-white" />
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-gray-800">Tichi - AI Meditation Assistant</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Indara - AI Meditation Assistant</h2>
         <p className="text-sm text-gray-600">Tell me what you need, and I'll create the perfect soundscape</p>
       </div>
     </div>

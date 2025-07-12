@@ -12,7 +12,7 @@ export const useChatLogic = ({ onSoundRecommendation }: UseChatLogicProps) => {
     {
       id: '1',
       type: 'ai',
-      content: "Hello! I'm Tichi, your AI meditation assistant. Tell me how you're feeling today or what kind of meditation experience you're looking for, and I'll create the perfect soundscape for you.",
+      content: "Hello! I'm Indara, your AI meditation assistant. Tell me how you're feeling today or what kind of meditation experience you're looking for, and I'll create the perfect soundscape for you.",
       timestamp: new Date()
     }
   ]);
