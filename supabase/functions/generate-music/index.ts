@@ -73,83 +73,36 @@ async function generateMusicBackground(trackId: string, prompt: string, style: s
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Create enhanced prompt for MelodyFlow
-    const enhancedPrompt = `Generate ${style} healing music: ${prompt}. Duration: ${duration} minutes. Focus on therapeutic and calming qualities.`;
+    // Create enhanced prompt for MusicGen
+    const enhancedPrompt = `${style} healing music, ${prompt}, duration ${duration} minutes, therapeutic and calming`;
     
-    console.log('Generating music with prompt:', enhancedPrompt);
+    console.log('Generating music with MusicGen model:', enhancedPrompt);
 
-    // For demo purposes, generate a simple sine wave audio
-    // Note: MelodyFlow model may not be available via inference API
-    console.log('Generating demo audio for prompt:', enhancedPrompt);
-    
-    // Create a simple sine wave audio buffer (demo)
-    const sampleRate = 44100;
-    const durationSeconds = parseFloat(duration.split('-')[0]) * 60; // Use first number in duration
-    const numSamples = sampleRate * durationSeconds;
-    const audioBuffer = new ArrayBuffer(44 + numSamples * 2); // WAV header + 16-bit samples
-    const view = new DataView(audioBuffer);
-    
-    // WAV header
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
+    // Call MusicGen model via Hugging Face Inference API
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/facebook/musicgen-medium',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${huggingFaceToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: enhancedPrompt,
+          parameters: {
+            max_length: Math.min(parseFloat(duration.split('-')[0]) * 60, 30) // Limit to 30 seconds for demo
+          }
+        }),
       }
-    };
-    
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, numSamples * 2, true);
-    
-    // Generate sine wave based on style
-    const frequencies = {
-      ambient: [220, 330, 440],
-      nature: [200, 400, 600],
-      binaural: [440, 444],
-      tibetan: [256, 384, 512],
-      piano: [261.63, 329.63, 392],
-      crystal: [440, 880, 1320],
-      meditation: [174, 285, 396],
-      chakra: [396, 417, 528]
-    };
-    
-    const styleFreqs = frequencies[style as keyof typeof frequencies] || frequencies.ambient;
-    
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / sampleRate;
-      let sample = 0;
-      
-      // Mix multiple frequencies for richer sound
-      styleFreqs.forEach((freq, index) => {
-        const amplitude = 0.3 / styleFreqs.length * (1 - index * 0.2);
-        sample += Math.sin(2 * Math.PI * freq * t) * amplitude;
-      });
-      
-      // Add some gentle amplitude modulation for a more natural sound
-      sample *= 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.1 * t);
-      
-      // Apply fade in/out
-      const fadeTime = Math.min(2, durationSeconds / 4);
-      if (t < fadeTime) {
-        sample *= t / fadeTime;
-      } else if (t > durationSeconds - fadeTime) {
-        sample *= (durationSeconds - t) / fadeTime;
-      }
-      
-      const sampleValue = Math.max(-32767, Math.min(32767, sample * 32767));
-      view.setInt16(44 + i * 2, sampleValue, true);
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('MusicGen API error:', response.status, errorText);
+      throw new Error(`MusicGen API error: ${response.status} ${errorText}`);
     }
-    
-    const audioData = new Uint8Array(audioBuffer);
+
+    const audioData = new Uint8Array(await response.arrayBuffer());
     
     console.log('Generated audio data size:', audioData.length);
 
