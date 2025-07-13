@@ -6,6 +6,7 @@ import { MusicGenerator } from '@/components/MusicGenerator';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { MeditationLibrary } from '@/components/MeditationLibrary';
 import { Hero } from '@/components/Hero';
+import { CommunityShowcase } from '@/components/CommunityShowcase';
 
 const Index = () => {
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
@@ -24,6 +25,7 @@ const Index = () => {
           {currentView === 'home' && (
             <div className="space-y-8">
               <Hero onStartChat={() => setCurrentView('generate')} />
+              <CommunityShowcase onTrackSelect={(track) => setSelectedSound(track.audio_url)} />
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <MeditationLibrary 
