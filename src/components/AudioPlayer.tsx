@@ -20,36 +20,36 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
   const howlRef = useRef<Howl | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Real audio files from public folder
+  // Test with existing MP3 file and add fallback URLs
   const soundData: Record<string, { name: string; url: string; description: string }> = {
     'ocean-waves': {
       name: 'Ocean Waves',
-      url: '/audio/ocean-waves.wav',
+      url: '/audio/ocean-waves.mp3', // Use the existing MP3 file
       description: 'Gentle waves lapping against the shore'
     },
     'forest-rain': {
       name: 'Forest Rain',
-      url: '/audio/forest-rain.wav',
+      url: 'https://www.soundjay.com/misc/sounds/rain-01.wav',
       description: 'Soft rainfall in a peaceful forest'
     },
     'tibetan-bowls': {
       name: 'Tibetan Singing Bowls',
-      url: '/audio/tibetan-bowls.wav',
+      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
       description: 'Traditional meditation bowl sounds'
     },
     'binaural-focus': {
       name: 'Binaural Focus',
-      url: '/audio/binaural-focus.wav',
+      url: 'https://www.soundjay.com/misc/sounds/beep-07a.wav',
       description: '40Hz binaural beats for concentration'
     },
     'white-noise': {
       name: 'White Noise',
-      url: '/audio/white-noise.wav',
+      url: 'https://www.soundjay.com/misc/sounds/wind-chimes-02.wav',
       description: 'Pure white noise for sleep'
     },
     'piano-ambient': {
       name: 'Ambient Piano',
-      url: '/audio/ambient-piano.wav',
+      url: 'https://www.soundjay.com/misc/sounds/clock-tick-2.wav',
       description: 'Soft piano melodies with reverb'
     }
   };
