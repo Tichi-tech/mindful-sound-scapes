@@ -20,36 +20,36 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
   const howlRef = useRef<Howl | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock sound data (replace with actual audio files)
+  // Real audio files from public folder
   const soundData: Record<string, { name: string; url: string; description: string }> = {
     'ocean-waves': {
       name: 'Ocean Waves',
-      url: '/sounds/ocean-waves.mp3', // These would be actual audio files
+      url: '/audio/ocean-waves.wav',
       description: 'Gentle waves lapping against the shore'
     },
     'forest-rain': {
       name: 'Forest Rain',
-      url: '/sounds/forest-rain.mp3',
+      url: '/audio/forest-rain.wav',
       description: 'Soft rainfall in a peaceful forest'
     },
     'tibetan-bowls': {
       name: 'Tibetan Singing Bowls',
-      url: '/sounds/tibetan-bowls.mp3',
+      url: '/audio/tibetan-bowls.wav',
       description: 'Traditional meditation bowl sounds'
     },
     'binaural-focus': {
       name: 'Binaural Focus',
-      url: '/sounds/binaural-focus.mp3',
+      url: '/audio/binaural-focus.wav',
       description: '40Hz binaural beats for concentration'
     },
     'white-noise': {
       name: 'White Noise',
-      url: '/sounds/white-noise.mp3',
+      url: '/audio/white-noise.wav',
       description: 'Pure white noise for sleep'
     },
     'piano-ambient': {
       name: 'Ambient Piano',
-      url: '/sounds/piano-ambient.mp3',
+      url: '/audio/ambient-piano.wav',
       description: 'Soft piano melodies with reverb'
     }
   };
@@ -62,17 +62,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
         howlRef.current.unload();
       }
 
-      // For demo purposes, we'll simulate audio without actual files
-      // In production, you would load actual audio files here
+      // Load actual audio files
       console.log(`Loading sound: ${soundData[selectedSound].name}`);
       
-      // Simulate duration for demo
-      setDuration(1800); // 30 minutes in seconds
       setCurrentTime(0);
       setIsPlaying(false);
 
-      // In production, uncomment this to use actual Howler.js:
-      /*
       howlRef.current = new Howl({
         src: [soundData[selectedSound].url],
         volume: volume[0] / 100,
@@ -92,9 +87,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
           setIsPlaying(false);
           setCurrentTime(0);
           stopTimeUpdate();
+        },
+        onloaderror: (id, error) => {
+          console.error('Audio load error:', error);
+        },
+        onplayerror: (id, error) => {
+          console.error('Audio play error:', error);
         }
       });
-      */
     }
 
     return () => {
@@ -124,20 +124,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
   const togglePlay = () => {
     if (!selectedSound) return;
 
-    // Demo simulation
-    if (isPlaying) {
-      setIsPlaying(false);
-      stopTimeUpdate();
-    } else {
-      setIsPlaying(true);
-      // Simulate time progress for demo
-      intervalRef.current = setInterval(() => {
-        setCurrentTime(prev => Math.min(prev + 1, duration));
-      }, 1000);
-    }
-
-    // In production with actual audio files:
-    /*
+    // Use actual audio playback
     if (howlRef.current) {
       if (isPlaying) {
         howlRef.current.pause();
@@ -145,7 +132,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ selectedSound }) => {
         howlRef.current.play();
       }
     }
-    */
   };
 
   const handleVolumeChange = (newVolume: number[]) => {
