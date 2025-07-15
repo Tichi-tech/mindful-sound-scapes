@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Navigation } from '@/components/Navigation';
-import { MusicGenerator } from '@/components/MusicGenerator';
+import { GeneratorSelection } from '@/components/GeneratorSelection';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { MeditationLibrary } from '@/components/MeditationLibrary';
 import { Hero } from '@/components/Hero';
@@ -41,7 +41,7 @@ const Index = () => {
           )}
           
           {currentView === 'generate' && (
-            <MusicGenerator />
+            <GeneratorSelection />
           )}
           
           {currentView === 'library' && (
