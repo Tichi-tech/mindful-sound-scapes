@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Music, Brain, ArrowLeft } from 'lucide-react';
 import { MusicGenerator } from './MusicGenerator';
+import { MeditationGenerator } from './MeditationGenerator';
 
 type GeneratorType = 'music' | 'meditation' | null;
 
@@ -37,27 +38,7 @@ export const GeneratorSelection: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Generator Selection
         </Button>
-        <div className="max-w-4xl mx-auto">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Generate Meditation Session
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Create personalized guided meditation sessions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <p className="text-gray-600 mb-4">
-                Meditation session generator coming soon!
-              </p>
-              <p className="text-sm text-gray-500">
-                This feature will allow you to create custom guided meditation sessions
-                tailored to your specific needs and preferences.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <MeditationGenerator />
       </div>
     );
   }
@@ -146,9 +127,8 @@ export const GeneratorSelection: React.FC = () => {
               <Button
                 onClick={() => setSelectedGenerator('meditation')}
                 className="w-full mt-6 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
-                disabled
               >
-                Coming Soon
+                Start Generating Sessions
               </Button>
             </CardContent>
           </Card>
