@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Wand2, Music, Sparkles } from 'lucide-react';
+import { Home, Wand2, Music, Sparkles, Compass } from 'lucide-react';
 
 interface NavigationProps {
-  currentView: 'home' | 'generate' | 'library';
-  onViewChange: (view: 'home' | 'generate' | 'library') => void;
+  currentView: 'home' | 'generate' | 'library' | 'explore';
+  onViewChange: (view: 'home' | 'generate' | 'library' | 'explore') => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) => {
@@ -13,6 +13,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
     { id: 'home', label: 'Home', icon: Home },
     { id: 'generate', label: 'Generate', icon: Wand2 },
     { id: 'library', label: 'My Music', icon: Music },
+    { id: 'explore', label: 'Explore', icon: Compass },
   ];
 
   return (

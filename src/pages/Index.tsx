@@ -7,10 +7,11 @@ import { AudioPlayer } from '@/components/AudioPlayer';
 import { MeditationLibrary } from '@/components/MeditationLibrary';
 import { Hero } from '@/components/Hero';
 import { CommunityShowcase } from '@/components/CommunityShowcase';
+import { Explore } from '@/components/Explore';
 
 const Index = () => {
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'generate' | 'library'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'generate' | 'library' | 'explore'>('home');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -62,6 +63,10 @@ const Index = () => {
                 </div>
               </div>
             </div>
+          )}
+          
+          {currentView === 'explore' && (
+            <Explore />
           )}
         </motion.div>
       </main>
