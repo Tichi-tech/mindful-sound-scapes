@@ -1,7 +1,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Wand2, Music, Sparkles, Compass } from 'lucide-react';
+import { Home, Wand2, Music, Sparkles, Compass, LogIn, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface NavigationProps {
   currentView: 'home' | 'generate' | 'library' | 'explore';
@@ -9,11 +13,38 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) => {
+  const { isAuthenticated, user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleAuthAction = async () => {
+    if (isAuthenticated) {
+      const { error } = await signOut();
+      if (!error) {
+        toast({
+          title: "Signed out",
+          description: "You've been successfully signed out.",
+        });
+        onViewChange('home');
+      }
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const handleNavClick = (viewId: string) => {
+    if ((viewId === 'generate' || viewId === 'library') && !isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    onViewChange(viewId as any);
+  };
+
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'generate', label: 'Generate', icon: Wand2 },
-    { id: 'library', label: 'My Music', icon: Music },
-    { id: 'explore', label: 'Explore', icon: Compass },
+    { id: 'home', label: 'Home', icon: Home, public: true },
+    { id: 'generate', label: 'Generate', icon: Wand2, public: false },
+    { id: 'library', label: 'My Music', icon: Music, public: false },
+    { id: 'explore', label: 'Explore', icon: Compass, public: true },
   ];
 
   return (
@@ -32,22 +63,31 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
+              const isDisabled = !item.public && !isAuthenticated;
               
               return (
                 <motion.button
                   key={item.id}
-                  onClick={() => onViewChange(item.id as any)}
-                   className={`relative px-4 py-2 rounded-lg font-medium transition-colors ${
+                  onClick={() => handleNavClick(item.id)}
+                  disabled={isDisabled}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-colors ${
                     isActive 
                       ? 'text-primary' 
-                      : 'text-muted-foreground hover:text-primary'
+                      : isDisabled
+                        ? 'text-muted-foreground/50 cursor-not-allowed'
+                        : 'text-muted-foreground hover:text-primary'
                   }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={!isDisabled ? { scale: 1.05 } : {}}
+                  whileTap={!isDisabled ? { scale: 0.95 } : {}}
                 >
                   <div className="flex items-center space-x-2">
                     <Icon className="w-4 h-4" />
                     <span className="hidden sm:block">{item.label}</span>
+                    {!item.public && !isAuthenticated && (
+                      <div className="w-3 h-3 rounded-full bg-accent/50 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-accent rounded-full" />
+                      </div>
+                    )}
                   </div>
                   
                   {isActive && (
@@ -61,6 +101,31 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
                 </motion.button>
               );
             })}
+            
+            {/* Auth Button */}
+            <div className="ml-4 pl-4 border-l border-border">
+              <Button
+                onClick={handleAuthAction}
+                variant={isAuthenticated ? "ghost" : "default"}
+                size="sm"
+                className="flex items-center space-x-2 h-10"
+              >
+                {isAuthenticated ? (
+                  <>
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:block">
+                      {user?.email?.split('@')[0] || 'Profile'}
+                    </span>
+                    <LogOut className="w-4 h-4 ml-1" />
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4" />
+                    <span className="hidden sm:block">Sign In</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
