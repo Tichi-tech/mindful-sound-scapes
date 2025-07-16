@@ -45,6 +45,12 @@ export const Auth = () => {
               description: "Invalid email or password. Please check your credentials.",
               variant: "destructive",
             });
+          } else if (error.message === 'Email not confirmed') {
+            toast({
+              title: "Email Not Confirmed",
+              description: "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.",
+              variant: "destructive",
+            });
           } else {
             toast({
               title: "Login Failed",
