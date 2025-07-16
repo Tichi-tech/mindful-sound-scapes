@@ -129,7 +129,7 @@ export const Auth = () => {
               <img 
                 src="/lovable-uploads/1c8c11f2-0d94-4413-8722-c94c6180fd33.png" 
                 alt="Indara AI" 
-                className="h-20 w-auto mx-auto"
+                className="h-32 w-auto mx-auto"
               />
             </motion.div>
             <h1 className="text-2xl font-bold text-foreground mb-2">
