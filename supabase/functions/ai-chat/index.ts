@@ -1,4 +1,14 @@
-
+[
+  {
+    "text": "Uplifting pad texture with gentle melodic progression for positive energy and motivation",
+    "audio_file": "uplifting-pad-texture-113842.mp3",
+    "style": "ambient",
+    "duration": "3-5",
+    "emotion": "uplifting",
+    "instruments": ["pads", "synthesizer"],
+    "therapeutic_benefit": "positive energy, motivation"
+  }
+]
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
