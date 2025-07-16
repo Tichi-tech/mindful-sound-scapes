@@ -16,6 +16,13 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<'home' | 'generate' | 'library' | 'explore'>('home');
   const { isAuthenticated } = useAuth();
 
+  // Redirect to home if trying to access protected views without authentication
+  React.useEffect(() => {
+    if (!isAuthenticated && (currentView === 'generate' || currentView === 'library')) {
+      setCurrentView('home');
+    }
+  }, [isAuthenticated, currentView]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-accent/10">
       <Navigation currentView={currentView} onViewChange={setCurrentView} />

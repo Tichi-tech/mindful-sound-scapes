@@ -47,6 +47,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
     { id: 'explore', label: 'Explore', icon: Compass, public: true },
   ];
 
+  // Filter navigation items based on authentication status
+  const visibleNavItems = navItems.filter(item => 
+    item.public || isAuthenticated
+  );
+
   return (
     <nav className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md z-50 border-b border-border">
       <div className="container mx-auto px-4">
@@ -60,34 +65,25 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
           </div>
           
           <div className="flex items-center space-x-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
-              const isDisabled = !item.public && !isAuthenticated;
               
               return (
                 <motion.button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  disabled={isDisabled}
                   className={`relative px-4 py-2 rounded-lg font-medium transition-colors ${
                     isActive 
                       ? 'text-primary' 
-                      : isDisabled
-                        ? 'text-muted-foreground/50 cursor-not-allowed'
-                        : 'text-muted-foreground hover:text-primary'
+                      : 'text-muted-foreground hover:text-primary'
                   }`}
-                  whileHover={!isDisabled ? { scale: 1.05 } : {}}
-                  whileTap={!isDisabled ? { scale: 0.95 } : {}}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <div className="flex items-center space-x-2">
                     <Icon className="w-4 h-4" />
                     <span className="hidden sm:block">{item.label}</span>
-                    {!item.public && !isAuthenticated && (
-                      <div className="w-3 h-3 rounded-full bg-accent/50 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 bg-accent rounded-full" />
-                      </div>
-                    )}
                   </div>
                   
                   {isActive && (
