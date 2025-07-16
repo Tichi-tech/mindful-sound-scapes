@@ -14,7 +14,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<'home' | 'generate' | 'library' | 'explore'>('home');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-accent/10">
       <Navigation currentView={currentView} onViewChange={setCurrentView} />
       
       <main className="container mx-auto px-4 pt-20 pb-8">
