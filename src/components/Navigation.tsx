@@ -22,9 +22,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/3357473d-ea2d-4c95-9653-adc79c46974b.png" 
+              src="/lovable-uploads/61365487-5f27-498b-b7d6-6abfa41bf77c.png" 
               alt="Indara AI" 
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </div>
           
