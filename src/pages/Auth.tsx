@@ -124,9 +124,13 @@ export const Auth = () => {
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, duration: 0.4 }}
-              className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4"
+              className="mb-4"
             >
-              <Music className="w-8 h-8 text-primary" />
+              <img 
+                src="/lovable-uploads/1c8c11f2-0d94-4413-8722-c94c6180fd33.png" 
+                alt="Indara AI" 
+                className="h-20 w-auto mx-auto"
+              />
             </motion.div>
             <h1 className="text-2xl font-bold text-foreground mb-2">
               {isLogin ? 'Welcome Back' : 'Join Indara AI'}
