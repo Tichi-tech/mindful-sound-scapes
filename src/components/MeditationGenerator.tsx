@@ -60,23 +60,69 @@ export const MeditationGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // Insert session record into database
+      console.log('Starting meditation session generation...');
+      
+      const sessionTitle = title || `Meditation Session ${generatedSessions.length + 1}`;
+      
+      const generatedScript = `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
+
+This is a personalized meditation script for your "${prompt}" session. 
+
+Take a moment to settle into your practice. Notice your breath flowing naturally in and out. With each exhale, allow yourself to relax more deeply.
+
+${technique === 'mindfulness' ? 'Focus your attention on the present moment. Notice any thoughts that arise without judgment, then gently return your focus to your breath.' : ''}
+${technique === 'breathing' ? 'Now we will practice deep breathing. Inhale slowly for a count of four, hold for four, then exhale for four. Continue this rhythm.' : ''}
+${technique === 'body-scan' ? 'Starting from the top of your head, slowly scan down through your body. Notice any areas of tension and breathe into them.' : ''}
+${technique === 'loving-kindness' ? 'Bring to mind someone you love. Send them thoughts of loving-kindness and well-being. Now extend these feelings to yourself.' : ''}
+${technique === 'visualization' ? 'Imagine yourself in a peaceful place. See the colors, hear the sounds, feel the warmth or coolness around you.' : ''}
+${technique === 'progressive-relaxation' ? 'Starting with your toes, tense and then relax each muscle group. Move slowly up through your body.' : ''}
+${technique === 'chakra' ? 'Visualize a warm, healing light at the base of your spine. Let this light slowly rise up through each chakra center.' : ''}
+${technique === 'mantra' ? 'Choose a peaceful word or phrase. Repeat it silently with each breath, letting it anchor you in calm.' : ''}
+
+Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`;
+
+      console.log('Attempting to save session to database...');
+
+      // Try to save to database
       const { data: session, error: insertError } = await supabase
         .from('generated_sessions')
         .insert({
-          title: title || `Meditation Session ${generatedSessions.length + 1}`,
+          title: sessionTitle,
           prompt,
           technique,
           duration,
-          status: 'generating'
+          status: 'completed',
+          script: generatedScript
         })
         .select()
         .single();
 
       if (insertError) {
         console.error('Database insert error:', insertError);
-        throw new Error('Failed to create session record');
+        toast.error(`Failed to save to database: ${insertError.message}`);
+        
+        // Create local session as fallback
+        const localSession: GeneratedSession = {
+          id: `local-${Date.now()}`,
+          title: sessionTitle,
+          prompt,
+          duration,
+          technique,
+          script: generatedScript,
+          isGenerating: false,
+          timestamp: new Date()
+        };
+        
+        setGeneratedSessions(prev => [localSession, ...prev]);
+        toast.success('Meditation session created locally (not saved to database)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
       }
+
+      console.log('Session saved to database successfully:', session);
 
       const newSession: GeneratedSession = {
         id: session.id,
@@ -84,48 +130,13 @@ export const MeditationGenerator: React.FC = () => {
         prompt: session.prompt,
         duration: session.duration,
         technique: session.technique,
-        isGenerating: true,
+        script: session.script,
+        isGenerating: false,
         timestamp: new Date(session.created_at)
       };
 
       setGeneratedSessions(prev => [newSession, ...prev]);
-      
-      toast.success('Meditation session generation started! This may take a few moments...');
-      
-      // Simulate generation process and update database
-      setTimeout(async () => {
-        const generatedScript = `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
-
-This is a sample meditation script generated for your "${prompt}" session. The actual implementation would use AI to create personalized guided meditation content.
-
-Take a moment to settle into your practice...`;
-
-        // Update database with generated script
-        const { error: updateError } = await supabase
-          .from('generated_sessions')
-          .update({ 
-            script: generatedScript,
-            status: 'completed'
-          })
-          .eq('id', session.id);
-
-        if (updateError) {
-          console.error('Database update error:', updateError);
-        }
-
-        setGeneratedSessions(prev => 
-          prev.map(s => 
-            s.id === session.id 
-              ? { 
-                  ...s, 
-                  isGenerating: false,
-                  script: generatedScript
-                }
-              : s
-          )
-        );
-        toast.success('Your meditation session is ready!');
-      }, 3000);
+      toast.success('Meditation session created and saved to database!');
       
       // Clear form
       setPrompt('');

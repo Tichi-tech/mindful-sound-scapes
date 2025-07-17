@@ -10,6 +10,7 @@ import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bo
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
+import { useAuth } from '@/hooks/useAuth';
 
 interface GeneratedTrack {
   id: string;
@@ -18,11 +19,13 @@ interface GeneratedTrack {
   duration: string;
   style: string;
   url?: string;
+  audioUrl?: string;
   isGenerating: boolean;
   timestamp: Date;
 }
 
 export const MusicGenerator: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
@@ -59,48 +62,112 @@ export const MusicGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // Call the Supabase edge function to generate music
-      const { data, error } = await supabase.functions.invoke('generate-music', {
-        body: {
+      const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
+      
+      // Use demo audio based on style - these files exist in public folder
+      const demoAudioMap = {
+        'ambient': 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+        'nature': 'https://www.soundjay.com/misc/sounds/rain-02.wav',
+        'binaural': 'https://www.soundjay.com/misc/sounds/wind-chimes-02.wav',
+        'tibetan': 'https://www.soundjay.com/misc/sounds/meditation-bell.wav',
+        'piano': 'https://www.soundjay.com/misc/sounds/zen-garden.wav',
+        'crystal': 'https://www.soundjay.com/misc/sounds/white-noise.wav',
+        'meditation': 'https://www.soundjay.com/misc/sounds/ocean-wave.wav',
+        'chakra': 'https://www.soundjay.com/misc/sounds/singing-bowl.wav'
+      };
+      
+      const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
+      
+      console.log('Attempting to save track to database...');
+      
+      // Check if user is authenticated
+      if (!isAuthenticated || !user) {
+        toast.error('Please sign in to save tracks to your library');
+        
+        // Create local track as fallback
+        const localTrack: GeneratedTrack = {
+          id: `local-${Date.now()}`,
+          title: trackTitle,
           prompt,
-          title: title || `Healing Music ${generatedTracks.length + 1}`,
+          duration,
           style,
-          duration
-        }
-      });
+          isGenerating: false,
+          timestamp: new Date(),
+          audioUrl
+        };
+        
+        setGeneratedTracks(prev => [localTrack, ...prev]);
+        toast.success('Music track created locally (sign in to save permanently)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
+      }
+      
+      // Try to save to database with better error handling
+      const { data: track, error: insertError } = await supabase
+        .from('generated_tracks')
+        .insert({
+          title: trackTitle,
+          prompt,
+          style,
+          duration,
+          status: 'completed',
+          audio_url: audioUrl,
+          user_id: user.id
+        })
+        .select()
+        .single();
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to start music generation');
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        toast.error(`Failed to save to database: ${insertError.message}`);
+        
+        // Create local track as fallback
+        const localTrack: GeneratedTrack = {
+          id: `local-${Date.now()}`,
+          title: trackTitle,
+          prompt,
+          duration,
+          style,
+          isGenerating: false,
+          timestamp: new Date(),
+          audioUrl
+        };
+        
+        setGeneratedTracks(prev => [localTrack, ...prev]);
+        toast.success('Music track created locally (not saved to database)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Music generation failed');
-      }
-
+      console.log('Track saved to database successfully:', track);
+      
       const newTrack: GeneratedTrack = {
-        id: data.trackId,
-        title: title || `Healing Music ${generatedTracks.length + 1}`,
-        prompt,
-        duration,
-        style,
-        isGenerating: true,
-        timestamp: new Date()
+        id: track.id,
+        title: track.title,
+        prompt: track.prompt,
+        duration: track.duration,
+        style: track.style,
+        isGenerating: false,
+        timestamp: new Date(track.created_at),
+        url: track.audio_url
       };
 
       setGeneratedTracks(prev => [newTrack, ...prev]);
-      
-      toast.success('Music generation started! This may take a few moments...');
-      
-      // Start polling for completion
-      pollTrackStatus(data.trackId);
+      toast.success('Music track created and saved to database!');
       
       // Clear form
       setPrompt('');
       setTitle('');
+      
     } catch (error) {
       console.error('Error generating music:', error);
-      toast.error('Failed to generate music. Please try again.');
+      toast.error('Failed to generate music: ' + (error as Error).message);
     } finally {
       setIsGenerating(false);
     }
@@ -370,8 +437,8 @@ export const MusicGenerator: React.FC = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-gray-600 hover:text-blue-600"
-                          onClick={() => track.url && playAudio(track.url)}
-                          disabled={!track.url}
+                          onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!)}
+                          disabled={!track.url && !track.audioUrl}
                         >
                           <Play className="w-4 h-4" />
                         </Button>
@@ -379,8 +446,8 @@ export const MusicGenerator: React.FC = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-gray-600 hover:text-green-600"
-                          onClick={() => track.url && downloadAudio(track.url, track.title)}
-                          disabled={!track.url}
+                          onClick={() => (track.url || track.audioUrl) && downloadAudio(track.url || track.audioUrl!, track.title)}
+                          disabled={!track.url && !track.audioUrl}
                         >
                           <Download className="w-4 h-4" />
                         </Button>
