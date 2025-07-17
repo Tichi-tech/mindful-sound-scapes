@@ -43,7 +43,7 @@ serve(async (req) => {
     console.log('Created track:', track.id);
 
     // Start background demo audio generation
-    generateDemoAudio(track.id, prompt, style, duration, supabase);
+    EdgeRuntime.waitUntil(generateDemoAudio(track.id, prompt, style, duration, supabase));
 
     return new Response(JSON.stringify({ 
       success: true, 
