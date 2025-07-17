@@ -5,6 +5,7 @@ import { Navigation } from '@/components/Navigation';
 import { GeneratorSelection } from '@/components/GeneratorSelection';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { MeditationLibrary } from '@/components/MeditationLibrary';
+import { MyLibrary } from '@/components/MyLibrary';
 import { Hero } from '@/components/Hero';
 import { CommunityShowcase } from '@/components/CommunityShowcase';
 import { Explore } from '@/components/Explore';
@@ -59,40 +60,7 @@ const Index = () => {
           
           {currentView === 'library' && (
             <ProtectedRoute>
-              <div className="max-w-6xl mx-auto">
-                <h1 className="text-3xl font-bold text-foreground mb-8 text-center">
-                  My Generated Music
-                </h1>
-                <div className="grid md:grid-cols-3 gap-8">
-                  <div className="md:col-span-2">
-                    <MeditationLibrary 
-                      onSoundSelect={setSelectedSound}
-                      selectedSound={selectedSound}
-                      expanded={true}
-                    />
-                  </div>
-                  <div>
-                    <AudioPlayer selectedSound={selectedSound} />
-                  </div>
-                </div>
-                
-                {/* Community Section for authenticated users */}
-                {isAuthenticated && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-12"
-                  >
-                    <div className="border-t border-border pt-8">
-                      <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-                        Community Highlights
-                      </h2>
-                      <CommunityShowcase onTrackSelect={(track) => setSelectedSound(track.audio_url)} />
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+              <MyLibrary />
             </ProtectedRoute>
           )}
           

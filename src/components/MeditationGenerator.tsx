@@ -60,34 +60,66 @@ export const MeditationGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // For now, create a mock session since we don't have the edge function yet
+      // Insert session record into database
+      const { data: session, error: insertError } = await supabase
+        .from('generated_sessions')
+        .insert({
+          title: title || `Meditation Session ${generatedSessions.length + 1}`,
+          prompt,
+          technique,
+          duration,
+          status: 'generating'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw new Error('Failed to create session record');
+      }
+
       const newSession: GeneratedSession = {
-        id: crypto.randomUUID(),
-        title: title || `Meditation Session ${generatedSessions.length + 1}`,
-        prompt,
-        duration,
-        technique,
+        id: session.id,
+        title: session.title,
+        prompt: session.prompt,
+        duration: session.duration,
+        technique: session.technique,
         isGenerating: true,
-        timestamp: new Date()
+        timestamp: new Date(session.created_at)
       };
 
       setGeneratedSessions(prev => [newSession, ...prev]);
       
       toast.success('Meditation session generation started! This may take a few moments...');
       
-      // Simulate generation process
-      setTimeout(() => {
-        setGeneratedSessions(prev => 
-          prev.map(s => 
-            s.id === newSession.id 
-              ? { 
-                  ...s, 
-                  isGenerating: false,
-                  script: `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
+      // Simulate generation process and update database
+      setTimeout(async () => {
+        const generatedScript = `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
 
 This is a sample meditation script generated for your "${prompt}" session. The actual implementation would use AI to create personalized guided meditation content.
 
-Take a moment to settle into your practice...`
+Take a moment to settle into your practice...`;
+
+        // Update database with generated script
+        const { error: updateError } = await supabase
+          .from('generated_sessions')
+          .update({ 
+            script: generatedScript,
+            status: 'completed'
+          })
+          .eq('id', session.id);
+
+        if (updateError) {
+          console.error('Database update error:', updateError);
+        }
+
+        setGeneratedSessions(prev => 
+          prev.map(s => 
+            s.id === session.id 
+              ? { 
+                  ...s, 
+                  isGenerating: false,
+                  script: generatedScript
                 }
               : s
           )

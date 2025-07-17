@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_sessions: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          duration: string
+          id: string
+          prompt: string
+          script: string | null
+          status: string | null
+          technique: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          duration: string
+          id?: string
+          prompt: string
+          script?: string | null
+          status?: string | null
+          technique: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          duration?: string
+          id?: string
+          prompt?: string
+          script?: string | null
+          status?: string | null
+          technique?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       generated_tracks: {
         Row: {
           audio_url: string | null

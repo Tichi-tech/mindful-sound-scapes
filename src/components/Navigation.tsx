@@ -43,7 +43,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, public: true },
     { id: 'generate', label: 'Generate', icon: Wand2, public: false },
-    { id: 'library', label: 'My Music', icon: Music, public: false },
+    { id: 'library', label: 'My Library', icon: Music, public: false },
     { id: 'explore', label: 'Explore', icon: Compass, public: true },
   ];
 
