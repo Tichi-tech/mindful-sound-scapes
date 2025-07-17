@@ -67,8 +67,10 @@ export const MyLibrary: React.FC = () => {
   const fetchLibraryData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching library data...');
       
       // Fetch generated tracks
+      console.log('Fetching tracks...');
       const { data: tracksData, error: tracksError } = await supabase
         .from('generated_tracks')
         .select('*')
@@ -78,10 +80,12 @@ export const MyLibrary: React.FC = () => {
         console.error('Error fetching tracks:', tracksError);
         toast.error('Failed to load music tracks');
       } else {
+        console.log('Tracks fetched successfully:', tracksData?.length || 0);
         setTracks(tracksData || []);
       }
 
       // Fetch generated sessions
+      console.log('Fetching sessions...');
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('generated_sessions')
         .select('*')
@@ -91,6 +95,7 @@ export const MyLibrary: React.FC = () => {
         console.error('Error fetching sessions:', sessionsError);
         toast.error('Failed to load meditation sessions');
       } else {
+        console.log('Sessions fetched successfully:', sessionsData?.length || 0);
         setSessions(sessionsData || []);
       }
     } catch (error) {
