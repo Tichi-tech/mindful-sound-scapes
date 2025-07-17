@@ -31,6 +31,22 @@ export const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Check network connectivity first
+    try {
+      const response = await fetch('https://httpbin.org/get');
+      if (!response.ok) {
+        throw new Error('Network connectivity issue');
+      }
+    } catch (networkError) {
+      toast({
+        title: "Connection Error",
+        description: "Please check your internet connection and try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
@@ -51,13 +67,19 @@ export const Auth = () => {
               description: "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.",
               variant: "destructive",
             });
-          } else {
-            toast({
-              title: "Login Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          toast({
+            title: "Connection Error",
+            description: "Unable to connect to authentication service. Please check your internet connection and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         } else {
           toast({
             title: "Welcome back!",
@@ -83,6 +105,12 @@ export const Auth = () => {
               description: "An account with this email already exists. Try logging in instead.",
               variant: "destructive",
             });
+          } else if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+            toast({
+              title: "Connection Error", 
+              description: "Unable to connect to authentication service. Please check your internet connection and try again.",
+              variant: "destructive",
+            });
           } else {
             toast({
               title: "Sign up failed",
@@ -98,12 +126,21 @@ export const Auth = () => {
           setIsLogin(true);
         }
       }
-    } catch (error) {
-      toast({
-        title: "An error occurred",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      if (error?.message?.includes('Failed to fetch') || error?.message?.includes('fetch')) {
+        toast({
+          title: "Connection Error",
+          description: "Unable to connect to authentication service. Please check your internet connection, disable ad blockers, and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "An error occurred",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
