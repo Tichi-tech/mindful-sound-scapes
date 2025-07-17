@@ -7,10 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
-import { useAuth } from '@/hooks/useAuth';
 
 interface GeneratedTrack {
   id: string;
@@ -25,7 +23,6 @@ interface GeneratedTrack {
 }
 
 export const MusicGenerator: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
@@ -78,88 +75,20 @@ export const MusicGenerator: React.FC = () => {
       
       const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
       
-      console.log('Attempting to save track to database...');
-      
-      // Check if user is authenticated
-      if (!isAuthenticated || !user) {
-        toast.error('Please sign in to save tracks to your library');
-        
-        // Create local track as fallback
-        const localTrack: GeneratedTrack = {
-          id: `local-${Date.now()}`,
-          title: trackTitle,
-          prompt,
-          duration,
-          style,
-          isGenerating: false,
-          timestamp: new Date(),
-          audioUrl
-        };
-        
-        setGeneratedTracks(prev => [localTrack, ...prev]);
-        toast.success('Music track created locally (sign in to save permanently)');
-        
-        // Clear form
-        setPrompt('');
-        setTitle('');
-        return;
-      }
-      
-      // Try to save to database with better error handling
-      const { data: track, error: insertError } = await supabase
-        .from('generated_tracks')
-        .insert({
-          title: trackTitle,
-          prompt,
-          style,
-          duration,
-          status: 'completed',
-          audio_url: audioUrl,
-          user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Database insert error:', insertError);
-        toast.error(`Failed to save to database: ${insertError.message}`);
-        
-        // Create local track as fallback
-        const localTrack: GeneratedTrack = {
-          id: `local-${Date.now()}`,
-          title: trackTitle,
-          prompt,
-          duration,
-          style,
-          isGenerating: false,
-          timestamp: new Date(),
-          audioUrl
-        };
-        
-        setGeneratedTracks(prev => [localTrack, ...prev]);
-        toast.success('Music track created locally (not saved to database)');
-        
-        // Clear form
-        setPrompt('');
-        setTitle('');
-        return;
-      }
-
-      console.log('Track saved to database successfully:', track);
-      
-      const newTrack: GeneratedTrack = {
-        id: track.id,
-        title: track.title,
-        prompt: track.prompt,
-        duration: track.duration,
-        style: track.style,
+      // Create local track (no database storage)
+      const localTrack: GeneratedTrack = {
+        id: `local-${Date.now()}`,
+        title: trackTitle,
+        prompt,
+        duration,
+        style,
         isGenerating: false,
-        timestamp: new Date(track.created_at),
-        url: track.audio_url
+        timestamp: new Date(),
+        audioUrl
       };
-
-      setGeneratedTracks(prev => [newTrack, ...prev]);
-      toast.success('Music track created and saved to database!');
+      
+      setGeneratedTracks(prev => [localTrack, ...prev]);
+      toast.success('Healing music created successfully!');
       
       // Clear form
       setPrompt('');
@@ -203,64 +132,6 @@ export const MusicGenerator: React.FC = () => {
     }
   };
 
-  const pollTrackStatus = async (trackId: string) => {
-    const maxAttempts = 60; // Poll for up to 5 minutes
-    let attempts = 0;
-
-    const poll = async () => {
-      try {
-        const { data: track, error } = await supabase
-          .from('generated_tracks')
-          .select('*')
-          .eq('id', trackId)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error polling track status:', error);
-          return;
-        }
-
-        if (!track) {
-          console.error('Track not found:', trackId);
-          return;
-        }
-
-        console.log('Track status update:', { id: trackId, status: track.status, audio_url: track.audio_url });
-
-        setGeneratedTracks(prev => 
-          prev.map(t => 
-            t.id === trackId 
-              ? { 
-                  ...t, 
-                  isGenerating: track.status === 'generating' || track.status === 'loading_model',
-                  url: track.audio_url 
-                }
-              : t
-          )
-        );
-
-        if (track.status === 'completed') {
-          toast.success('Your healing music is ready!');
-          return;
-        } else if (track.status === 'failed') {
-          toast.error('Music generation failed. Please try again.');
-          return;
-        } else if (track.status === 'loading_model') {
-          toast.info('Model is loading, please wait...');
-        }
-
-        // Continue polling if still generating
-        attempts++;
-        if (attempts < maxAttempts && (track.status === 'generating' || track.status === 'loading_model')) {
-          setTimeout(poll, 5000); // Poll every 5 seconds
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    };
-
-    poll();
-  };
 
   const handleChatEnrichment = (enrichedPrompt: string) => {
     setPrompt(enrichedPrompt);
