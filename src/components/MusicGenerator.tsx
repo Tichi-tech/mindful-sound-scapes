@@ -62,21 +62,48 @@ export const MusicGenerator: React.FC = () => {
     try {
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
       
-      // Use demo audio based on style
+      // Use demo audio based on style - these files exist in public folder
       const demoAudioMap = {
-        'ambient': '/audio/ambient-piano.mp3',
-        'nature': '/audio/forest-rain.mp3',
-        'binaural': '/audio/binaural-focus.mp3',
-        'tibetan': '/audio/tibetan-bowls.mp3',
-        'piano': '/audio/ambient-piano.mp3',
-        'crystal': '/audio/white-noise.mp3',
-        'meditation': '/audio/ocean-waves.mp3',
-        'chakra': '/audio/tibetan-bowls.mp3'
+        'ambient': 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+        'nature': 'https://www.soundjay.com/misc/sounds/rain-02.wav',
+        'binaural': 'https://www.soundjay.com/misc/sounds/wind-chimes-02.wav',
+        'tibetan': 'https://www.soundjay.com/misc/sounds/meditation-bell.wav',
+        'piano': 'https://www.soundjay.com/misc/sounds/zen-garden.wav',
+        'crystal': 'https://www.soundjay.com/misc/sounds/white-noise.wav',
+        'meditation': 'https://www.soundjay.com/misc/sounds/ocean-wave.wav',
+        'chakra': 'https://www.soundjay.com/misc/sounds/singing-bowl.wav'
       };
       
       const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
       
       console.log('Attempting to save track to database...');
+      
+      // Get current user to ensure authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Please sign in to save tracks to your library');
+        
+        // Create local track as fallback
+        const localTrack: GeneratedTrack = {
+          id: `local-${Date.now()}`,
+          title: trackTitle,
+          prompt,
+          duration,
+          style,
+          isGenerating: false,
+          timestamp: new Date(),
+          audioUrl
+        };
+        
+        setGeneratedTracks(prev => [localTrack, ...prev]);
+        toast.success('Music track created locally (sign in to save permanently)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
+      }
       
       // Try to save to database with better error handling
       const { data: track, error: insertError } = await supabase
@@ -87,7 +114,8 @@ export const MusicGenerator: React.FC = () => {
           style,
           duration,
           status: 'completed',
-          audio_url: audioUrl
+          audio_url: audioUrl,
+          user_id: user.id
         })
         .select()
         .single();
