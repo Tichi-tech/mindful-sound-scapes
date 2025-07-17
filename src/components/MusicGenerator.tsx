@@ -10,6 +10,7 @@ import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bo
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
+import { useAuth } from '@/hooks/useAuth';
 
 interface GeneratedTrack {
   id: string;
@@ -24,6 +25,7 @@ interface GeneratedTrack {
 }
 
 export const MusicGenerator: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
@@ -78,10 +80,8 @@ export const MusicGenerator: React.FC = () => {
       
       console.log('Attempting to save track to database...');
       
-      // Get current user to ensure authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+      // Check if user is authenticated
+      if (!isAuthenticated || !user) {
         toast.error('Please sign in to save tracks to your library');
         
         // Create local track as fallback
