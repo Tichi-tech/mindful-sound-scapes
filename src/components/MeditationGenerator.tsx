@@ -62,7 +62,6 @@ export const MeditationGenerator: React.FC = () => {
     try {
       console.log('Starting meditation session generation...');
       
-      const sessionId = `demo-${Date.now()}`;
       const sessionTitle = title || `Meditation Session ${generatedSessions.length + 1}`;
       
       const generatedScript = `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
@@ -82,49 +81,62 @@ ${technique === 'mantra' ? 'Choose a peaceful word or phrase. Repeat it silently
 
 Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`;
 
-      // Try to save to database, but fallback to local state if it fails
-      let savedToDatabase = false;
-      try {
-        const { data: session, error: insertError } = await supabase
-          .from('generated_sessions')
-          .insert({
-            id: sessionId,
-            title: sessionTitle,
-            prompt,
-            technique,
-            duration,
-            status: 'completed',
-            script: generatedScript
-          })
-          .select()
-          .single();
+      console.log('Attempting to save session to database...');
 
-        if (!insertError) {
-          savedToDatabase = true;
-          console.log('Session saved to database:', session.id);
-        }
-      } catch (dbError) {
-        console.warn('Database save failed, using local mode:', dbError);
+      // Try to save to database
+      const { data: session, error: insertError } = await supabase
+        .from('generated_sessions')
+        .insert({
+          title: sessionTitle,
+          prompt,
+          technique,
+          duration,
+          status: 'completed',
+          script: generatedScript
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        toast.error(`Failed to save to database: ${insertError.message}`);
+        
+        // Create local session as fallback
+        const localSession: GeneratedSession = {
+          id: `local-${Date.now()}`,
+          title: sessionTitle,
+          prompt,
+          duration,
+          technique,
+          script: generatedScript,
+          isGenerating: false,
+          timestamp: new Date()
+        };
+        
+        setGeneratedSessions(prev => [localSession, ...prev]);
+        toast.success('Meditation session created locally (not saved to database)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
       }
 
+      console.log('Session saved to database successfully:', session);
+
       const newSession: GeneratedSession = {
-        id: sessionId,
-        title: sessionTitle,
-        prompt,
-        duration,
-        technique,
-        script: generatedScript,
+        id: session.id,
+        title: session.title,
+        prompt: session.prompt,
+        duration: session.duration,
+        technique: session.technique,
+        script: session.script,
         isGenerating: false,
-        timestamp: new Date()
+        timestamp: new Date(session.created_at)
       };
 
       setGeneratedSessions(prev => [newSession, ...prev]);
-      
-      if (savedToDatabase) {
-        toast.success('Meditation session created and saved!');
-      } else {
-        toast.success('Meditation session created! (Demo mode - not saved to database)');
-      }
+      toast.success('Meditation session created and saved to database!');
       
       // Clear form
       setPrompt('');

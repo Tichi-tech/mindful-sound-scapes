@@ -60,8 +60,6 @@ export const MusicGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // Create a demo track with local storage fallback
-      const trackId = `demo-${Date.now()}`;
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
       
       // Use demo audio based on style
@@ -78,53 +76,67 @@ export const MusicGenerator: React.FC = () => {
       
       const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
       
-      // Try to save to database, but fallback to local state if it fails
-      let savedToDatabase = false;
-      try {
-        const { data: track, error: insertError } = await supabase
-          .from('generated_tracks')
-          .insert({
-            id: trackId,
-            title: trackTitle,
-            prompt,
-            style,
-            duration,
-            status: 'completed',
-            audio_url: audioUrl
-          })
-          .select()
-          .single();
+      console.log('Attempting to save track to database...');
+      
+      // Try to save to database with better error handling
+      const { data: track, error: insertError } = await supabase
+        .from('generated_tracks')
+        .insert({
+          title: trackTitle,
+          prompt,
+          style,
+          duration,
+          status: 'completed',
+          audio_url: audioUrl
+        })
+        .select()
+        .single();
 
-        if (!insertError) {
-          savedToDatabase = true;
-          console.log('Track saved to database:', track.id);
-        }
-      } catch (dbError) {
-        console.warn('Database save failed, using local mode:', dbError);
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        toast.error(`Failed to save to database: ${insertError.message}`);
+        
+        // Create local track as fallback
+        const localTrack: GeneratedTrack = {
+          id: `local-${Date.now()}`,
+          title: trackTitle,
+          prompt,
+          duration,
+          style,
+          isGenerating: false,
+          timestamp: new Date(),
+          audioUrl
+        };
+        
+        setGeneratedTracks(prev => [localTrack, ...prev]);
+        toast.success('Music track created locally (not saved to database)');
+        
+        // Clear form
+        setPrompt('');
+        setTitle('');
+        return;
       }
 
+      console.log('Track saved to database successfully:', track);
+      
       const newTrack: GeneratedTrack = {
-        id: trackId,
-        title: trackTitle,
-        prompt,
-        duration,
-        style,
+        id: track.id,
+        title: track.title,
+        prompt: track.prompt,
+        duration: track.duration,
+        style: track.style,
         isGenerating: false,
-        timestamp: new Date(),
-        audioUrl // Add local audio URL
+        timestamp: new Date(track.created_at),
+        url: track.audio_url
       };
 
       setGeneratedTracks(prev => [newTrack, ...prev]);
-      
-      if (savedToDatabase) {
-        toast.success('Music track created and saved!');
-      } else {
-        toast.success('Music track created! (Demo mode - not saved to database)');
-      }
+      toast.success('Music track created and saved to database!');
       
       // Clear form
       setPrompt('');
       setTitle('');
+      
     } catch (error) {
       console.error('Error generating music:', error);
       toast.error('Failed to generate music: ' + (error as Error).message);
