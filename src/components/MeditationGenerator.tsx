@@ -62,14 +62,10 @@ export const MeditationGenerator: React.FC = () => {
     try {
       console.log('Starting meditation session generation...');
       
-      // Create session record directly in database (fallback mode)
-      const sessionData = {
-        title: title || `Meditation Session ${generatedSessions.length + 1}`,
-        prompt,
-        technique,
-        duration,
-        status: 'completed',
-        script: `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
+      const sessionId = `demo-${Date.now()}`;
+      const sessionTitle = title || `Meditation Session ${generatedSessions.length + 1}`;
+      
+      const generatedScript = `Welcome to your ${technique} meditation session. Find a comfortable position and close your eyes. Let's begin by taking three deep breaths together...
 
 This is a personalized meditation script for your "${prompt}" session. 
 
@@ -84,39 +80,51 @@ ${technique === 'progressive-relaxation' ? 'Starting with your toes, tense and t
 ${technique === 'chakra' ? 'Visualize a warm, healing light at the base of your spine. Let this light slowly rise up through each chakra center.' : ''}
 ${technique === 'mantra' ? 'Choose a peaceful word or phrase. Repeat it silently with each breath, letting it anchor you in calm.' : ''}
 
-Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`
-      };
-      
-      console.log('Inserting session data:', sessionData);
-      
-      const { data: session, error: insertError } = await supabase
-        .from('generated_sessions')
-        .insert(sessionData)
-        .select()
-        .single();
+Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`;
 
-      if (insertError) {
-        console.error('Database insert error:', insertError);
-        toast.error('Failed to create session in database: ' + insertError.message);
-        throw new Error('Failed to create session record');
+      // Try to save to database, but fallback to local state if it fails
+      let savedToDatabase = false;
+      try {
+        const { data: session, error: insertError } = await supabase
+          .from('generated_sessions')
+          .insert({
+            id: sessionId,
+            title: sessionTitle,
+            prompt,
+            technique,
+            duration,
+            status: 'completed',
+            script: generatedScript
+          })
+          .select()
+          .single();
+
+        if (!insertError) {
+          savedToDatabase = true;
+          console.log('Session saved to database:', session.id);
+        }
+      } catch (dbError) {
+        console.warn('Database save failed, using local mode:', dbError);
       }
-      
-      console.log('Session created successfully:', session);
 
       const newSession: GeneratedSession = {
-        id: session.id,
-        title: session.title,
-        prompt: session.prompt,
-        duration: session.duration,
-        technique: session.technique,
-        script: session.script,
+        id: sessionId,
+        title: sessionTitle,
+        prompt,
+        duration,
+        technique,
+        script: generatedScript,
         isGenerating: false,
-        timestamp: new Date(session.created_at)
+        timestamp: new Date()
       };
 
       setGeneratedSessions(prev => [newSession, ...prev]);
       
-      toast.success('Meditation session created successfully!');
+      if (savedToDatabase) {
+        toast.success('Meditation session created and saved!');
+      } else {
+        toast.success('Meditation session created! (Demo mode - not saved to database)');
+      }
       
       // Clear form
       setPrompt('');

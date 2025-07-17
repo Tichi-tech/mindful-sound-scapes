@@ -18,6 +18,7 @@ interface GeneratedTrack {
   duration: string;
   style: string;
   url?: string;
+  audioUrl?: string;
   isGenerating: boolean;
   timestamp: Date;
 }
@@ -59,68 +60,67 @@ export const MusicGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // Try to call the Supabase edge function first
-      let data;
-      let trackId;
+      // Create a demo track with local storage fallback
+      const trackId = `demo-${Date.now()}`;
+      const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
       
+      // Use demo audio based on style
+      const demoAudioMap = {
+        'ambient': '/audio/ambient-piano.mp3',
+        'nature': '/audio/forest-rain.mp3',
+        'binaural': '/audio/binaural-focus.mp3',
+        'tibetan': '/audio/tibetan-bowls.mp3',
+        'piano': '/audio/ambient-piano.mp3',
+        'crystal': '/audio/white-noise.mp3',
+        'meditation': '/audio/ocean-waves.mp3',
+        'chakra': '/audio/tibetan-bowls.mp3'
+      };
+      
+      const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
+      
+      // Try to save to database, but fallback to local state if it fails
+      let savedToDatabase = false;
       try {
-        const response = await supabase.functions.invoke('generate-music', {
-          body: {
-            prompt,
-            title: title || `Healing Music ${generatedTracks.length + 1}`,
-            style,
-            duration
-          }
-        });
-
-        if (response.error) {
-          throw new Error(response.error.message || 'Edge function failed');
-        }
-
-        data = response.data;
-        trackId = data.trackId;
-      } catch (edgeError) {
-        console.warn('Edge function failed, using fallback mode:', edgeError);
-        
-        // Fallback: Create record directly in database
         const { data: track, error: insertError } = await supabase
           .from('generated_tracks')
           .insert({
-            title: title || `Healing Music ${generatedTracks.length + 1}`,
+            id: trackId,
+            title: trackTitle,
             prompt,
             style,
             duration,
             status: 'completed',
-            audio_url: '/audio/ambient-piano.mp3' // Use demo audio
+            audio_url: audioUrl
           })
           .select()
           .single();
 
-        if (insertError) {
-          throw new Error('Failed to create track record: ' + insertError.message);
+        if (!insertError) {
+          savedToDatabase = true;
+          console.log('Track saved to database:', track.id);
         }
-
-        trackId = track.id;
-        data = { success: true, trackId: track.id };
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Music generation failed');
+      } catch (dbError) {
+        console.warn('Database save failed, using local mode:', dbError);
       }
 
       const newTrack: GeneratedTrack = {
         id: trackId,
-        title: title || `Healing Music ${generatedTracks.length + 1}`,
+        title: trackTitle,
         prompt,
         duration,
         style,
-        isGenerating: false, // Set to false for demo mode
-        timestamp: new Date()
+        isGenerating: false,
+        timestamp: new Date(),
+        audioUrl // Add local audio URL
       };
 
       setGeneratedTracks(prev => [newTrack, ...prev]);
       
-      toast.success('Music track created successfully!');
+      if (savedToDatabase) {
+        toast.success('Music track created and saved!');
+      } else {
+        toast.success('Music track created! (Demo mode - not saved to database)');
+      }
       
       // Clear form
       setPrompt('');
@@ -397,8 +397,8 @@ export const MusicGenerator: React.FC = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-gray-600 hover:text-blue-600"
-                          onClick={() => track.url && playAudio(track.url)}
-                          disabled={!track.url}
+                          onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!)}
+                          disabled={!track.url && !track.audioUrl}
                         >
                           <Play className="w-4 h-4" />
                         </Button>
@@ -406,8 +406,8 @@ export const MusicGenerator: React.FC = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-gray-600 hover:text-green-600"
-                          onClick={() => track.url && downloadAudio(track.url, track.title)}
-                          disabled={!track.url}
+                          onClick={() => (track.url || track.audioUrl) && downloadAudio(track.url || track.audioUrl!, track.title)}
+                          disabled={!track.url && !track.audioUrl}
                         >
                           <Download className="w-4 h-4" />
                         </Button>
