@@ -60,23 +60,32 @@ export const MeditationGenerator: React.FC = () => {
     setIsGenerating(true);
     
     try {
+      console.log('Starting meditation session generation...');
+      
       // Insert session record into database
+      const sessionData = {
+        title: title || `Meditation Session ${generatedSessions.length + 1}`,
+        prompt,
+        technique,
+        duration,
+        status: 'generating'
+      };
+      
+      console.log('Inserting session data:', sessionData);
+      
       const { data: session, error: insertError } = await supabase
         .from('generated_sessions')
-        .insert({
-          title: title || `Meditation Session ${generatedSessions.length + 1}`,
-          prompt,
-          technique,
-          duration,
-          status: 'generating'
-        })
+        .insert(sessionData)
         .select()
         .single();
 
       if (insertError) {
         console.error('Database insert error:', insertError);
+        toast.error('Failed to create session in database: ' + insertError.message);
         throw new Error('Failed to create session record');
       }
+      
+      console.log('Session created successfully:', session);
 
       const newSession: GeneratedSession = {
         id: session.id,
