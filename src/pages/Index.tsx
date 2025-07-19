@@ -36,7 +36,10 @@ const Index = () => {
         >
           {currentView === 'home' && (
             <div className="space-y-8">
-              <Hero onStartChat={() => setCurrentView('generate')} />
+              <Hero 
+                onStartChat={() => setCurrentView('generate')} 
+                onBrowseCreations={() => setCurrentView('explore')}
+              />
               <CommunityShowcase onTrackSelect={(track) => setSelectedSound(track.audio_url)} />
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">

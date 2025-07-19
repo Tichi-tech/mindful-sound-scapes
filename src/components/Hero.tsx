@@ -6,9 +6,10 @@ import { Sparkles, Music, Wand2 } from 'lucide-react';
 
 interface HeroProps {
   onStartChat: () => void;
+  onBrowseCreations: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onStartChat }) => {
+export const Hero: React.FC<HeroProps> = ({ onStartChat, onBrowseCreations }) => {
   return (
     <div className="text-center py-12 space-y-8">
       <motion.div
@@ -45,6 +46,7 @@ export const Hero: React.FC<HeroProps> = ({ onStartChat }) => {
         </Button>
         
         <Button 
+          onClick={onBrowseCreations}
           variant="outline"
           size="lg"
           className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-full text-lg font-medium"
