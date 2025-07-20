@@ -2,7 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -44,8 +43,8 @@ serve(async (req) => {
 
     console.log('Created track:', track.id);
 
-    // Start background AI music generation
-    generateMusicWithAI(track.id, prompt, style, duration, supabase);
+    // Start with demo audio generation to test basic functionality
+    generateDemoAudio(track.id, prompt, style, duration, supabase);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -66,82 +65,82 @@ serve(async (req) => {
   }
 });
 
-
-async function generateMusicWithAI(trackId: string, prompt: string, style: string, duration: string, supabase: any) {
+async function generateDemoAudio(trackId: string, prompt: string, style: string, duration: string, supabase: any) {
   try {
-    console.log('=== MUSIC GENERATION START ===');
-    console.log('Generating AI music for:', { trackId, style, duration, prompt });
+    console.log('=== DEMO AUDIO GENERATION START ===');
+    console.log('Generating demo audio for:', { trackId, style, duration });
     
-    if (!huggingFaceToken) {
-      console.error('HUGGING_FACE_ACCESS_TOKEN not found in environment');
-      throw new Error('Hugging Face API token not configured');
-    }
+    // Create a simple sine wave audio buffer (demo)
+    const sampleRate = 44100;
+    const durationSeconds = parseFloat(duration.split('-')[0]) * 60; // Use first number in duration
+    const numSamples = sampleRate * durationSeconds;
+    const audioBuffer = new ArrayBuffer(44 + numSamples * 2); // WAV header + 16-bit samples
+    const view = new DataView(audioBuffer);
     
-    console.log('Hugging Face token exists:', huggingFaceToken ? 'YES' : 'NO');
-
-    // Create style-specific prompt for MusicGen
-    const stylePrompts = {
-      ambient: 'ambient healing music, peaceful, atmospheric, ethereal, relaxing',
-      nature: 'nature sounds, forest ambience, birds chirping, flowing water, peaceful',
-      binaural: 'binaural beats, meditation music, theta waves, consciousness',
-      tibetan: 'tibetan singing bowls, meditation, spiritual healing, temple bells',
-      piano: 'gentle piano melody, soft, healing, peaceful, classical inspired',
-      crystal: 'crystal bowls, sound healing, pure tones, ethereal, meditation',
-      meditation: 'deep meditation music, zen, mindfulness, peaceful, calming',
-      chakra: 'chakra healing music, spiritual, energy healing, frequency therapy'
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
     };
     
-    const stylePrefix = stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.ambient;
-    const fullPrompt = `${stylePrefix}, ${prompt}`;
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, numSamples * 2, true);
     
-    console.log('=== API CALL START ===');
-    console.log('Full prompt being sent:', fullPrompt);
-    console.log('About to call Hugging Face API...');
-
-    // Use MusicGen Medium which is more stable than Small
-    const response = await fetch('https://api-inference.huggingface.co/models/facebook/musicgen-medium', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${huggingFaceToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: fullPrompt,
-        options: {
-          wait_for_model: true
-        }
-      }),
-    });
-
-    console.log('API Response status:', response.status);
-    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('=== HUGGING FACE API ERROR ===');
-      console.error('Status:', response.status);
-      console.error('Status Text:', response.statusText);
-      console.error('Error response:', errorText);
-      throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+    // Generate sine wave based on style
+    const frequencies = {
+      ambient: [220, 330, 440],
+      nature: [200, 400, 600],
+      binaural: [440, 444],
+      tibetan: [256, 384, 512],
+      piano: [261.63, 329.63, 392],
+      crystal: [440, 880, 1320],
+      meditation: [174, 285, 396],
+      chakra: [396, 417, 528]
+    };
+    
+    const styleFreqs = frequencies[style as keyof typeof frequencies] || frequencies.ambient;
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      let sample = 0;
+      
+      // Mix multiple frequencies for richer sound
+      styleFreqs.forEach((freq, index) => {
+        const amplitude = 0.3 / styleFreqs.length * (1 - index * 0.2);
+        sample += Math.sin(2 * Math.PI * freq * t) * amplitude;
+      });
+      
+      // Add some gentle amplitude modulation for a more natural sound
+      sample *= 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.1 * t);
+      
+      // Apply fade in/out
+      const fadeTime = Math.min(2, durationSeconds / 4);
+      if (t < fadeTime) {
+        sample *= t / fadeTime;
+      } else if (t > durationSeconds - fadeTime) {
+        sample *= (durationSeconds - t) / fadeTime;
+      }
+      
+      const sampleValue = Math.max(-32767, Math.min(32767, sample * 32767));
+      view.setInt16(44 + i * 2, sampleValue, true);
     }
-
-    // Get the audio blob response
-    console.log('=== PROCESSING RESPONSE ===');
-    const audioBlob = await response.blob();
-    console.log('Audio blob size:', audioBlob.size);
-    console.log('Audio blob type:', audioBlob.type);
     
-    const audioArrayBuffer = await audioBlob.arrayBuffer();
-    const audioData = new Uint8Array(audioArrayBuffer);
-    
-    console.log('Generated AI music data size:', audioData.length);
+    const audioData = new Uint8Array(audioBuffer);
+    console.log('Generated demo audio data size:', audioData.length);
 
-    if (audioData.length === 0) {
-      console.error('Generated audio is empty!');
-      throw new Error('Generated audio is empty');
-    }
-
-    console.log('=== UPLOADING TO STORAGE ===');
+    // Upload to Supabase Storage
     const fileName = `${trackId}.wav`;
     const { error: uploadError } = await supabase.storage
       .from('generated-music')
@@ -151,11 +150,10 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       });
 
     if (uploadError) {
-      console.error('=== STORAGE UPLOAD ERROR ===');
-      console.error('Upload error details:', uploadError);
+      console.error('Storage upload error:', uploadError);
       throw new Error('Failed to upload audio file');
     }
-    
+
     console.log('=== UPLOAD SUCCESSFUL ===');
 
     // Get public URL
@@ -173,19 +171,15 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       .eq('id', trackId);
 
     if (updateError) {
-      console.error('=== DATABASE UPDATE ERROR ===');
-      console.error('Update error details:', updateError);
+      console.error('Database update error:', updateError);
       throw new Error('Failed to update track');
     }
 
-    console.log('=== MUSIC GENERATION COMPLETED SUCCESSFULLY ===');
-    console.log('Track completed:', trackId);
+    console.log('=== DEMO AUDIO GENERATION COMPLETED ===');
 
   } catch (error) {
-    console.error('=== MUSIC GENERATION ERROR ===');
+    console.error('=== DEMO AUDIO GENERATION ERROR ===');
     console.error('Error details:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
     
     // Update track status to failed
     await supabase
