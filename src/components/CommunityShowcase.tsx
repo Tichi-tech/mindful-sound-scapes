@@ -5,6 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import healingMusic1 from '@/assets/healing-music-1.jpg';
+import healingMusic2 from '@/assets/healing-music-2.jpg';
+import healingMusic3 from '@/assets/healing-music-3.jpg';
+import healingMusic4 from '@/assets/healing-music-4.jpg';
+import healingMusic5 from '@/assets/healing-music-5.jpg';
+import healingMusic6 from '@/assets/healing-music-6.jpg';
 
 type Track = Tables<'generated_tracks'>;
 
@@ -15,6 +21,15 @@ interface CommunityShowcaseProps {
 export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSelect }) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const healingImages = [
+    healingMusic1,
+    healingMusic2, 
+    healingMusic3,
+    healingMusic4,
+    healingMusic5,
+    healingMusic6
+  ];
 
   useEffect(() => {
     const fetchTracks = async () => {
@@ -117,9 +132,13 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSel
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
               <Card className="group hover:shadow-lg transition-all duration-300 hover-scale">
-                <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-lg overflow-hidden">
-                  {/* Placeholder artwork - could be replaced with actual track artwork */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-pink-400/20"></div>
+                <div className="relative aspect-square rounded-t-lg overflow-hidden">
+                  <img 
+                    src={healingImages[index % healingImages.length]} 
+                    alt={`Healing music artwork for ${track.title}`}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Button
                       variant="ghost"
