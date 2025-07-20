@@ -69,11 +69,15 @@ serve(async (req) => {
 
 async function generateMusicWithAI(trackId: string, prompt: string, style: string, duration: string, supabase: any) {
   try {
-    console.log('Generating AI music for:', { trackId, style, duration });
+    console.log('=== MUSIC GENERATION START ===');
+    console.log('Generating AI music for:', { trackId, style, duration, prompt });
     
     if (!huggingFaceToken) {
+      console.error('HUGGING_FACE_ACCESS_TOKEN not found in environment');
       throw new Error('Hugging Face API token not configured');
     }
+    
+    console.log('Hugging Face token exists:', huggingFaceToken ? 'YES' : 'NO');
 
     // Create style-specific prompt for MusicGen
     const stylePrompts = {
@@ -90,7 +94,9 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
     const stylePrefix = stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.ambient;
     const fullPrompt = `${stylePrefix}, ${prompt}`;
     
-    console.log('Generating music with prompt:', fullPrompt);
+    console.log('=== API CALL START ===');
+    console.log('Full prompt being sent:', fullPrompt);
+    console.log('About to call Hugging Face API...');
 
     // Use MusicGen Medium which is more stable than Small
     const response = await fetch('https://api-inference.huggingface.co/models/facebook/musicgen-medium', {
@@ -107,24 +113,35 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       }),
     });
 
+    console.log('API Response status:', response.status);
+    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Hugging Face API error:', response.status, errorText);
+      console.error('=== HUGGING FACE API ERROR ===');
+      console.error('Status:', response.status);
+      console.error('Status Text:', response.statusText);
+      console.error('Error response:', errorText);
       throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
     }
 
     // Get the audio blob response
+    console.log('=== PROCESSING RESPONSE ===');
     const audioBlob = await response.blob();
+    console.log('Audio blob size:', audioBlob.size);
+    console.log('Audio blob type:', audioBlob.type);
+    
     const audioArrayBuffer = await audioBlob.arrayBuffer();
     const audioData = new Uint8Array(audioArrayBuffer);
     
     console.log('Generated AI music data size:', audioData.length);
 
     if (audioData.length === 0) {
+      console.error('Generated audio is empty!');
       throw new Error('Generated audio is empty');
     }
 
-    // Upload to Supabase Storage
+    console.log('=== UPLOADING TO STORAGE ===');
     const fileName = `${trackId}.wav`;
     const { error: uploadError } = await supabase.storage
       .from('generated-music')
@@ -134,9 +151,12 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
+      console.error('=== STORAGE UPLOAD ERROR ===');
+      console.error('Upload error details:', uploadError);
       throw new Error('Failed to upload audio file');
     }
+    
+    console.log('=== UPLOAD SUCCESSFUL ===');
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
@@ -153,14 +173,19 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       .eq('id', trackId);
 
     if (updateError) {
-      console.error('Database update error:', updateError);
+      console.error('=== DATABASE UPDATE ERROR ===');
+      console.error('Update error details:', updateError);
       throw new Error('Failed to update track');
     }
 
-    console.log('AI music generation completed for track:', trackId);
+    console.log('=== MUSIC GENERATION COMPLETED SUCCESSFULLY ===');
+    console.log('Track completed:', trackId);
 
   } catch (error) {
-    console.error('AI music generation error:', error);
+    console.error('=== MUSIC GENERATION ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     // Update track status to failed
     await supabase
