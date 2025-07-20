@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,8 +75,6 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
       throw new Error('Hugging Face API token not configured');
     }
 
-    const hf = new HfInference(huggingFaceToken);
-    
     // Create style-specific prompt for MusicGen
     const stylePrompts = {
       ambient: 'ambient healing music, peaceful, atmospheric, ethereal, relaxing',
@@ -94,17 +92,37 @@ async function generateMusicWithAI(trackId: string, prompt: string, style: strin
     
     console.log('Generating music with prompt:', fullPrompt);
 
-    // Generate music using MusicGen Small model
-    const audioBlob = await hf.textToAudio({
-      model: 'facebook/musicgen-small',
-      inputs: fullPrompt,
+    // Use MusicGen Medium which is more stable than Small
+    const response = await fetch('https://api-inference.huggingface.co/models/facebook/musicgen-medium', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${huggingFaceToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: fullPrompt,
+        options: {
+          wait_for_model: true
+        }
+      }),
     });
 
-    // Convert blob to array buffer
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Hugging Face API error:', response.status, errorText);
+      throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+    }
+
+    // Get the audio blob response
+    const audioBlob = await response.blob();
     const audioArrayBuffer = await audioBlob.arrayBuffer();
     const audioData = new Uint8Array(audioArrayBuffer);
     
     console.log('Generated AI music data size:', audioData.length);
+
+    if (audioData.length === 0) {
+      throw new Error('Generated audio is empty');
+    }
 
     // Upload to Supabase Storage
     const fileName = `${trackId}.wav`;
