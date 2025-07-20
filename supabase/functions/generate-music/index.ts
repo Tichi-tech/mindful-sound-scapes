@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +9,8 @@ const corsHeaders = {
 };
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -42,8 +44,8 @@ serve(async (req) => {
 
     console.log('Created track:', track.id);
 
-    // Start background demo audio generation
-    generateDemoAudio(track.id, prompt, style, duration, supabase);
+    // Start background AI music generation
+    generateMusicWithAI(track.id, prompt, style, duration, supabase);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -65,79 +67,44 @@ serve(async (req) => {
 });
 
 
-async function generateDemoAudio(trackId: string, prompt: string, style: string, duration: string, supabase: any) {
+async function generateMusicWithAI(trackId: string, prompt: string, style: string, duration: string, supabase: any) {
   try {
-    console.log('Generating demo audio for:', { trackId, style, duration });
+    console.log('Generating AI music for:', { trackId, style, duration });
     
-    // Create a simple sine wave audio buffer (demo)
-    const sampleRate = 44100;
-    const durationSeconds = parseFloat(duration.split('-')[0]) * 60; // Use first number in duration
-    const numSamples = sampleRate * durationSeconds;
-    const audioBuffer = new ArrayBuffer(44 + numSamples * 2); // WAV header + 16-bit samples
-    const view = new DataView(audioBuffer);
-    
-    // WAV header
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
-      }
-    };
-    
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, numSamples * 2, true);
-    
-    // Generate sine wave based on style
-    const frequencies = {
-      ambient: [220, 330, 440],
-      nature: [200, 400, 600],
-      binaural: [440, 444],
-      tibetan: [256, 384, 512],
-      piano: [261.63, 329.63, 392],
-      crystal: [440, 880, 1320],
-      meditation: [174, 285, 396],
-      chakra: [396, 417, 528]
-    };
-    
-    const styleFreqs = frequencies[style as keyof typeof frequencies] || frequencies.ambient;
-    
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / sampleRate;
-      let sample = 0;
-      
-      // Mix multiple frequencies for richer sound
-      styleFreqs.forEach((freq, index) => {
-        const amplitude = 0.3 / styleFreqs.length * (1 - index * 0.2);
-        sample += Math.sin(2 * Math.PI * freq * t) * amplitude;
-      });
-      
-      // Add some gentle amplitude modulation for a more natural sound
-      sample *= 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.1 * t);
-      
-      // Apply fade in/out
-      const fadeTime = Math.min(2, durationSeconds / 4);
-      if (t < fadeTime) {
-        sample *= t / fadeTime;
-      } else if (t > durationSeconds - fadeTime) {
-        sample *= (durationSeconds - t) / fadeTime;
-      }
-      
-      const sampleValue = Math.max(-32767, Math.min(32767, sample * 32767));
-      view.setInt16(44 + i * 2, sampleValue, true);
+    if (!huggingFaceToken) {
+      throw new Error('Hugging Face API token not configured');
     }
+
+    const hf = new HfInference(huggingFaceToken);
     
-    const audioData = new Uint8Array(audioBuffer);
-    console.log('Generated demo audio data size:', audioData.length);
+    // Create style-specific prompt for MusicGen
+    const stylePrompts = {
+      ambient: 'ambient healing music, peaceful, atmospheric, ethereal, relaxing',
+      nature: 'nature sounds, forest ambience, birds chirping, flowing water, peaceful',
+      binaural: 'binaural beats, meditation music, theta waves, consciousness',
+      tibetan: 'tibetan singing bowls, meditation, spiritual healing, temple bells',
+      piano: 'gentle piano melody, soft, healing, peaceful, classical inspired',
+      crystal: 'crystal bowls, sound healing, pure tones, ethereal, meditation',
+      meditation: 'deep meditation music, zen, mindfulness, peaceful, calming',
+      chakra: 'chakra healing music, spiritual, energy healing, frequency therapy'
+    };
+    
+    const stylePrefix = stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.ambient;
+    const fullPrompt = `${stylePrefix}, ${prompt}`;
+    
+    console.log('Generating music with prompt:', fullPrompt);
+
+    // Generate music using MusicGen Small model
+    const audioBlob = await hf.textToAudio({
+      model: 'facebook/musicgen-small',
+      inputs: fullPrompt,
+    });
+
+    // Convert blob to array buffer
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    const audioData = new Uint8Array(audioArrayBuffer);
+    
+    console.log('Generated AI music data size:', audioData.length);
 
     // Upload to Supabase Storage
     const fileName = `${trackId}.wav`;
@@ -172,10 +139,10 @@ async function generateDemoAudio(trackId: string, prompt: string, style: string,
       throw new Error('Failed to update track');
     }
 
-    console.log('Demo audio generation completed for track:', trackId);
+    console.log('AI music generation completed for track:', trackId);
 
   } catch (error) {
-    console.error('Demo audio generation error:', error);
+    console.error('AI music generation error:', error);
     
     // Update track status to failed
     await supabase
