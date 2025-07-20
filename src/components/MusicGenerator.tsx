@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
-import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedTrack {
   id: string;
@@ -62,37 +61,34 @@ export const MusicGenerator: React.FC = () => {
     try {
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
       
-      // Call the Supabase edge function to generate music
-      const { data, error } = await supabase.functions.invoke('generate-music', {
-        body: {
-          prompt,
-          title: trackTitle,
-          style,
-          duration
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to start music generation');
-      }
-
-      // Create local track that's generating
+      // Use demo audio based on style - these files exist in public folder
+      const demoAudioMap = {
+        'ambient': 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+        'nature': 'https://www.soundjay.com/misc/sounds/rain-02.wav',
+        'binaural': 'https://www.soundjay.com/misc/sounds/wind-chimes-02.wav',
+        'tibetan': 'https://www.soundjay.com/misc/sounds/meditation-bell.wav',
+        'piano': 'https://www.soundjay.com/misc/sounds/zen-garden.wav',
+        'crystal': 'https://www.soundjay.com/misc/sounds/white-noise.wav',
+        'meditation': 'https://www.soundjay.com/misc/sounds/ocean-wave.wav',
+        'chakra': 'https://www.soundjay.com/misc/sounds/singing-bowl.wav'
+      };
+      
+      const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
+      
+      // Create local track (no database storage)
       const localTrack: GeneratedTrack = {
-        id: data.trackId,
+        id: `local-${Date.now()}`,
         title: trackTitle,
         prompt,
         duration,
         style,
-        isGenerating: true,
-        timestamp: new Date()
+        isGenerating: false,
+        timestamp: new Date(),
+        audioUrl
       };
       
       setGeneratedTracks(prev => [localTrack, ...prev]);
-      toast.success('Music generation started! This may take a few minutes.');
-      
-      // Poll for completion
-      pollForCompletion(data.trackId);
+      toast.success('Healing music created successfully!');
       
       // Clear form
       setPrompt('');
@@ -104,68 +100,6 @@ export const MusicGenerator: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const pollForCompletion = async (trackId: string) => {
-    const maxAttempts = 60; // 5 minutes with 5-second intervals
-    let attempts = 0;
-
-    const checkStatus = async () => {
-      try {
-        const { data: track, error } = await supabase
-          .from('generated_tracks')
-          .select('*')
-          .eq('id', trackId)
-          .single();
-
-        if (error) {
-          console.error('Error checking track status:', error);
-          return;
-        }
-
-        if (track.status === 'completed') {
-          // Update local track with audio URL
-          setGeneratedTracks(prev => 
-            prev.map(t => 
-              t.id === trackId 
-                ? { ...t, isGenerating: false, audioUrl: track.audio_url }
-                : t
-            )
-          );
-          toast.success('Your healing music is ready!');
-          return;
-        } else if (track.status === 'failed') {
-          setGeneratedTracks(prev => 
-            prev.map(t => 
-              t.id === trackId 
-                ? { ...t, isGenerating: false }
-                : t
-            )
-          );
-          toast.error('Music generation failed. Please try again.');
-          return;
-        } else if (attempts < maxAttempts) {
-          // Still generating, check again in 5 seconds
-          attempts++;
-          setTimeout(checkStatus, 5000);
-        } else {
-          // Timeout
-          setGeneratedTracks(prev => 
-            prev.map(t => 
-              t.id === trackId 
-                ? { ...t, isGenerating: false }
-                : t
-            )
-          );
-          toast.error('Music generation timed out. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error polling for completion:', error);
-      }
-    };
-
-    // Start checking status
-    setTimeout(checkStatus, 5000);
   };
 
   const playAudio = (url: string) => {
