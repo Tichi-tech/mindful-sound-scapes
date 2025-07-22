@@ -51,12 +51,19 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSel
         let allTracks = featuredData || [];
         
         if (allTracks.length < 6) {
-          const { data: recentData, error: recentError } = await supabase
+          let recentQuery = supabase
             .from('generated_tracks')
             .select('*')
             .eq('status', 'completed')
-            .not('audio_url', 'is', null)
-            .not('id', 'in', `(${allTracks.map(t => `'${t.id}'`).join(',') || "''"})`)
+            .not('audio_url', 'is', null);
+          
+          // Only exclude featured tracks if we have any
+          if (allTracks.length > 0) {
+            const featuredIds = allTracks.map(t => t.id);
+            recentQuery = recentQuery.not('id', 'in', `(${featuredIds.map(id => `'${id}'`).join(',')})`);
+          }
+          
+          const { data: recentData, error: recentError } = await recentQuery
             .order('created_at', { ascending: false })
             .limit(6 - allTracks.length);
 
