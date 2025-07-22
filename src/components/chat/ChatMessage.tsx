@@ -22,8 +22,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
           message.type === 'user' 
             ? 'bg-gray-600' 
-            : 'bg-gradient-to-br from-blue-500 to-indigo-600'
-        }`}>
+            : ''
+        }`} style={message.type === 'ai' ? { background: 'var(--gradient-meditation)' } : {}}>
           {message.type === 'user' ? (
             <User className="w-4 h-4 text-white" />
           ) : (

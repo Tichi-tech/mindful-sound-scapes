@@ -51,6 +51,7 @@ All colors MUST be HSL.
     --gradient-warm: linear-gradient(135deg, hsl(36 100% 65%), hsl(45 100% 70%));
     --gradient-rainbow: linear-gradient(135deg, hsl(36 100% 65%), hsl(45 100% 70%), hsl(178 78% 57%));
     --gradient-primary: linear-gradient(135deg, hsl(262 47% 24%), hsl(262 47% 34%));
+    --gradient-meditation: linear-gradient(135deg, hsl(140 50% 65%), hsl(150 45% 70%));
   }
 
   .dark {
@@ -94,6 +95,7 @@ All colors MUST be HSL.
     --gradient-warm: linear-gradient(135deg, hsl(36 100% 55%), hsl(45 100% 60%));
     --gradient-rainbow: linear-gradient(135deg, hsl(36 100% 55%), hsl(45 100% 60%), hsl(178 78% 47%));
     --gradient-primary: linear-gradient(135deg, hsl(262 47% 24%), hsl(262 47% 34%));
+    --gradient-meditation: linear-gradient(135deg, hsl(140 40% 55%), hsl(150 35% 60%));
   }
 }
 

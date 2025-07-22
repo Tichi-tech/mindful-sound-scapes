@@ -10,7 +10,7 @@ export const LoadingIndicator: React.FC = () => {
       className="flex justify-start"
     >
       <div className="flex items-start space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-meditation)' }}>
           <Bot className="w-4 h-4 text-white" />
         </div>
         <div className="bg-gray-100 px-4 py-2 rounded-2xl">
