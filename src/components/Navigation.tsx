@@ -1,19 +1,21 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Wand2, Music, Sparkles, Compass, LogIn, LogOut, User } from 'lucide-react';
+import { Home, Wand2, Music, Sparkles, Compass, LogIn, LogOut, User, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 interface NavigationProps {
-  currentView: 'home' | 'generate' | 'library' | 'explore';
-  onViewChange: (view: 'home' | 'generate' | 'library' | 'explore') => void;
+  currentView: 'home' | 'generate' | 'library' | 'explore' | 'admin';
+  onViewChange: (view: 'home' | 'generate' | 'library' | 'explore' | 'admin') => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) => {
   const { isAuthenticated, user, signOut } = useAuth();
+  const { isAdmin } = useAdminStatus();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,7 +35,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
   };
 
   const handleNavClick = (viewId: string) => {
-    if ((viewId === 'generate' || viewId === 'library') && !isAuthenticated) {
+    if ((viewId === 'generate' || viewId === 'library' || viewId === 'admin') && !isAuthenticated) {
       navigate('/auth');
       return;
     }
@@ -45,12 +47,16 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
     { id: 'generate', label: 'Generate', icon: Wand2, public: false },
     { id: 'library', label: 'My Library', icon: Music, public: false },
     { id: 'explore', label: 'Explore', icon: Compass, public: true },
+    { id: 'admin', label: 'Admin', icon: Shield, public: false, adminOnly: true },
   ];
 
-  // Filter navigation items based on authentication status
-  const visibleNavItems = navItems.filter(item => 
-    item.public || isAuthenticated
-  );
+  // Filter navigation items based on authentication status and admin role
+  const visibleNavItems = navItems.filter(item => {
+    if (item.adminOnly) {
+      return isAuthenticated && isAdmin;
+    }
+    return item.public || isAuthenticated;
+  });
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md z-50 border-b border-border">

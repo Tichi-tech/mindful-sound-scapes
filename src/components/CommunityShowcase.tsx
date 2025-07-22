@@ -34,16 +34,37 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSel
   useEffect(() => {
     const fetchTracks = async () => {
       try {
-        const { data, error } = await supabase
+        // First try to get featured tracks
+        const { data: featuredData, error: featuredError } = await supabase
           .from('generated_tracks')
           .select('*')
           .eq('status', 'completed')
+          .eq('is_featured', true)
           .not('audio_url', 'is', null)
+          .order('admin_rating', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(6);
 
-        if (error) throw error;
-        setTracks(data || []);
+        if (featuredError) throw featuredError;
+
+        // If we have fewer than 6 featured tracks, fill with recent tracks
+        let allTracks = featuredData || [];
+        
+        if (allTracks.length < 6) {
+          const { data: recentData, error: recentError } = await supabase
+            .from('generated_tracks')
+            .select('*')
+            .eq('status', 'completed')
+            .not('audio_url', 'is', null)
+            .not('id', 'in', `(${allTracks.map(t => `'${t.id}'`).join(',') || "''"})`)
+            .order('created_at', { ascending: false })
+            .limit(6 - allTracks.length);
+
+          if (recentError) throw recentError;
+          allTracks = [...allTracks, ...(recentData || [])];
+        }
+
+        setTracks(allTracks.slice(0, 6));
       } catch (error) {
         console.error('Error fetching tracks:', error);
       } finally {
@@ -150,11 +171,16 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSel
                     </Button>
                   </div>
                   
-                  {/* Style badge */}
-                  <div className="absolute top-3 left-3">
+                  {/* Style badge and featured badge */}
+                  <div className="absolute top-3 left-3 flex gap-2">
                     <span className="px-2 py-1 text-xs font-medium bg-background/80 backdrop-blur-sm rounded-full">
                       {track.style}
                     </span>
+                    {track.is_featured && (
+                      <span className="px-2 py-1 text-xs font-medium bg-secondary/80 backdrop-blur-sm rounded-full text-secondary-foreground">
+                        Featured
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -167,21 +193,26 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({ onTrackSel
                     {track.prompt}
                   </p>
 
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        <span>{getRandomPlayCount().toLocaleString()}</span>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          <span>{getRandomPlayCount().toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          <span>{getRandomLikes().toLocaleString()}</span>
+                        </div>
+                        {track.admin_rating && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs">★ {track.admin_rating}/5</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Heart className="h-3 w-3" />
-                        <span>{getRandomLikes().toLocaleString()}</span>
-                      </div>
+                      <span className="text-xs">
+                        {formatDuration(track.duration)}
+                      </span>
                     </div>
-                    <span className="text-xs">
-                      {formatDuration(track.duration)}
-                    </span>
-                  </div>
                 </CardContent>
               </Card>
             </motion.div>
