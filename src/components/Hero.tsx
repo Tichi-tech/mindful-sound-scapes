@@ -20,7 +20,7 @@ export const Hero: React.FC<HeroProps> = ({ onStartChat, onBrowseCreations }) =>
       >
         <h1 className="text-5xl font-bold text-foreground leading-tight">
           AI-Powered
-          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <span style={{ background: 'var(--gradient-meditation)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
             {' '}Healing Music
           </span>
         </h1>

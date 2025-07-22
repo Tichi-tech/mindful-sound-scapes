@@ -67,8 +67,8 @@ export const GeneratorSelection: React.FC = () => {
         >
           <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 p-4 bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Music className="h-10 w-10 text-primary" />
+              <div className="mx-auto mb-4 p-4 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'var(--gradient-meditation)' }}>
+                <Music className="h-10 w-10 text-white" />
               </div>
               <CardTitle className="text-2xl font-bold text-card-foreground">
                 Generate Healing Music
@@ -89,7 +89,8 @@ export const GeneratorSelection: React.FC = () => {
               </ul>
               <Button
                 onClick={() => setSelectedGenerator('music')}
-                className="w-full mt-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="w-full mt-6 text-white"
+                style={{ background: 'var(--gradient-meditation)' }}
               >
                 Start Generating Music
               </Button>
@@ -104,8 +105,8 @@ export const GeneratorSelection: React.FC = () => {
         >
           <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 p-4 bg-accent/10 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Brain className="h-10 w-10 text-accent" />
+              <div className="mx-auto mb-4 p-4 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'var(--gradient-meditation)' }}>
+                <Brain className="h-10 w-10 text-white" />
               </div>
               <CardTitle className="text-2xl font-bold text-card-foreground">
                 Generate Meditation Session
@@ -126,7 +127,8 @@ export const GeneratorSelection: React.FC = () => {
               </ul>
               <Button
                 onClick={() => setSelectedGenerator('meditation')}
-                className="w-full mt-6 bg-accent hover:bg-accent/90 text-accent-foreground"
+                className="w-full mt-6 text-white"
+                style={{ background: 'var(--gradient-meditation)' }}
               >
                 Start Generating Sessions
               </Button>
