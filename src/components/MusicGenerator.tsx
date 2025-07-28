@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot, Pause } from 'lucide-react';
+import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,15 +171,17 @@ export const MusicGenerator: React.FC = () => {
     try {
       console.log('Attempting to play audio from URL:', url);
       
-      // Stop any currently playing audio
-      if (currentlyPlaying) {
-        stopAudio();
-      }
+      // Stop any currently playing audio first
+      stopAudio();
       
       const audio = new Audio(url);
       audio.addEventListener('loadstart', () => console.log('Audio loading started'));
       audio.addEventListener('canplay', () => console.log('Audio can start playing'));
-      audio.addEventListener('error', (e) => console.error('Audio element error:', e));
+      audio.addEventListener('error', (e) => {
+        console.error('Audio element error:', e);
+        toast.error('Unable to play audio. Please try downloading the file.');
+      });
+      
       audio.addEventListener('ended', () => {
         setCurrentlyPlaying(null);
         setAudioElements(prev => {
@@ -192,6 +194,7 @@ export const MusicGenerator: React.FC = () => {
       audio.play().then(() => {
         setCurrentlyPlaying(trackId);
         setAudioElements(prev => new Map(prev).set(trackId, audio));
+        toast.success('Playing audio');
       }).catch((error) => {
         console.error('Error playing audio:', error);
         toast.error('Unable to play audio. Please try downloading the file.');
@@ -203,19 +206,15 @@ export const MusicGenerator: React.FC = () => {
   };
 
   const stopAudio = () => {
-    if (currentlyPlaying) {
-      const audio = audioElements.get(currentlyPlaying);
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-      }
-      setCurrentlyPlaying(null);
-      setAudioElements(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(currentlyPlaying);
-        return newMap;
-      });
-    }
+    // Stop all currently playing audio
+    audioElements.forEach((audio, trackId) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    
+    setCurrentlyPlaying(null);
+    setAudioElements(new Map());
+    toast.success('Audio stopped');
   };
 
   const downloadAudio = (url: string, filename: string) => {
@@ -406,18 +405,20 @@ export const MusicGenerator: React.FC = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 border border-red-200"
                             onClick={stopAudio}
+                            title="Stop playing"
                           >
-                            <Pause className="w-4 h-4" />
+                            <Square className="w-4 h-4" />
                           </Button>
                         ) : (
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-gray-600 hover:text-blue-600"
+                            className="text-gray-600 hover:text-blue-600 border border-gray-200"
                             onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!, track.id)}
                             disabled={!track.url && !track.audioUrl}
+                            title="Play audio"
                           >
                             <Play className="w-4 h-4" />
                           </Button>
