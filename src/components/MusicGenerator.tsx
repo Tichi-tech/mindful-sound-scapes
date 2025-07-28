@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot } from 'lucide-react';
+import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot, Pause } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,9 +28,11 @@ export const MusicGenerator: React.FC = () => {
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
   const [duration, setDuration] = useState('2-3');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [audioElements, setAudioElements] = useState<Map<string, HTMLAudioElement>>(new Map());
 
   const pollForCompletion = async (trackId: string) => {
     const checkStatus = async () => {
@@ -165,21 +167,54 @@ export const MusicGenerator: React.FC = () => {
     }
   };
 
-  const playAudio = (url: string) => {
+  const playAudio = (url: string, trackId: string) => {
     try {
       console.log('Attempting to play audio from URL:', url);
+      
+      // Stop any currently playing audio
+      if (currentlyPlaying) {
+        stopAudio();
+      }
+      
       const audio = new Audio(url);
       audio.addEventListener('loadstart', () => console.log('Audio loading started'));
       audio.addEventListener('canplay', () => console.log('Audio can start playing'));
       audio.addEventListener('error', (e) => console.error('Audio element error:', e));
+      audio.addEventListener('ended', () => {
+        setCurrentlyPlaying(null);
+        setAudioElements(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(trackId);
+          return newMap;
+        });
+      });
       
-      audio.play().catch((error) => {
+      audio.play().then(() => {
+        setCurrentlyPlaying(trackId);
+        setAudioElements(prev => new Map(prev).set(trackId, audio));
+      }).catch((error) => {
         console.error('Error playing audio:', error);
         toast.error('Unable to play audio. Please try downloading the file.');
       });
     } catch (error) {
       console.error('Error creating audio element:', error);
       toast.error('Unable to play audio. Please try downloading the file.');
+    }
+  };
+
+  const stopAudio = () => {
+    if (currentlyPlaying) {
+      const audio = audioElements.get(currentlyPlaying);
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+      setCurrentlyPlaying(null);
+      setAudioElements(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(currentlyPlaying);
+        return newMap;
+      });
     }
   };
 
@@ -367,15 +402,26 @@ export const MusicGenerator: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-gray-600 hover:text-blue-600"
-                          onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!)}
-                          disabled={!track.url && !track.audioUrl}
-                        >
-                          <Play className="w-4 h-4" />
-                        </Button>
+                        {currentlyPlaying === track.id ? (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={stopAudio}
+                          >
+                            <Pause className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-gray-600 hover:text-blue-600"
+                            onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!, track.id)}
+                            disabled={!track.url && !track.audioUrl}
+                          >
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm" 

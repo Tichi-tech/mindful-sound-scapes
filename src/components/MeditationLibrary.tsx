@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Volume2 } from 'lucide-react';
+import { Play, Pause, Volume2, Square } from 'lucide-react';
 
 interface Sound {
   id: string;
@@ -25,6 +25,19 @@ export const MeditationLibrary: React.FC<MeditationLibraryProps> = ({
   selectedSound, 
   expanded = false 
 }) => {
+  const [playingSound, setPlayingSound] = useState<string | null>(null);
+
+  const handleSoundClick = (soundId: string) => {
+    if (playingSound === soundId) {
+      // Stop current sound
+      setPlayingSound(null);
+      onSoundSelect('');
+    } else {
+      // Play new sound
+      setPlayingSound(soundId);
+      onSoundSelect(soundId);
+    }
+  };
   const sounds: Sound[] = [
     {
       id: 'ocean-waves',
@@ -100,16 +113,16 @@ export const MeditationLibrary: React.FC<MeditationLibraryProps> = ({
           >
             <Card 
               className={`p-4 cursor-pointer transition-all duration-300 border-2 ${
-                selectedSound === sound.id 
+                playingSound === sound.id 
                   ? 'border-blue-500 bg-blue-50/50' 
                   : 'border-gray-200 hover:border-gray-300 bg-white/60'
               } backdrop-blur-sm`}
-              onClick={() => onSoundSelect(sound.id)}
+              onClick={() => handleSoundClick(sound.id)}
             >
               <div className="flex items-center space-x-4">
                 <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${sound.color} flex items-center justify-center`}>
-                  {selectedSound === sound.id ? (
-                    <Pause className="w-5 h-5 text-white" />
+                  {playingSound === sound.id ? (
+                    <Square className="w-5 h-5 text-white" />
                   ) : (
                     <Play className="w-5 h-5 text-white" />
                   )}
@@ -125,7 +138,7 @@ export const MeditationLibrary: React.FC<MeditationLibraryProps> = ({
                   <p className="text-sm text-gray-600 mt-1">{sound.description}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-gray-500">{sound.duration}</span>
-                    {selectedSound === sound.id && (
+                    {playingSound === sound.id && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
