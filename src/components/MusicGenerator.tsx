@@ -169,7 +169,8 @@ export const MusicGenerator: React.FC = () => {
 
   const playAudio = (url: string, trackId: string) => {
     try {
-      console.log('Attempting to play audio from URL:', url);
+      console.log('Playing audio for track:', trackId);
+      console.log('Current playing state before:', currentlyPlaying);
       
       // Stop any currently playing audio first
       stopAudio();
@@ -183,6 +184,7 @@ export const MusicGenerator: React.FC = () => {
       });
       
       audio.addEventListener('ended', () => {
+        console.log('Audio ended for track:', trackId);
         setCurrentlyPlaying(null);
         setAudioElements(prev => {
           const newMap = new Map(prev);
@@ -192,6 +194,7 @@ export const MusicGenerator: React.FC = () => {
       });
       
       audio.play().then(() => {
+        console.log('Audio started playing for track:', trackId);
         setCurrentlyPlaying(trackId);
         setAudioElements(prev => new Map(prev).set(trackId, audio));
         toast.success('Playing audio');
@@ -206,8 +209,12 @@ export const MusicGenerator: React.FC = () => {
   };
 
   const stopAudio = () => {
+    console.log('Stopping audio. Current playing:', currentlyPlaying);
+    console.log('Audio elements count:', audioElements.size);
+    
     // Stop all currently playing audio
     audioElements.forEach((audio, trackId) => {
+      console.log('Stopping audio for track:', trackId);
       audio.pause();
       audio.currentTime = 0;
     });
@@ -228,7 +235,6 @@ export const MusicGenerator: React.FC = () => {
       toast.error('Unable to download audio file.');
     }
   };
-
 
   const handleChatEnrichment = (enrichedPrompt: string) => {
     setPrompt(enrichedPrompt);
@@ -368,79 +374,84 @@ export const MusicGenerator: React.FC = () => {
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-gray-800">Your Generated Music</h3>
           <div className="grid gap-4">
-            {generatedTracks.map((track) => (
-              <motion.div
-                key={track.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-6 shadow-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-semibold text-gray-800">{track.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {styles.find(s => s.value === track.style)?.label}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {track.duration} min
-                      </Badge>
-                    </div>
-                    <p className="text-gray-600 text-sm line-clamp-2">{track.prompt}</p>
-                    <p className="text-xs text-gray-400">
-                      Generated {track.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-4">
-                    {track.isGenerating ? (
-                      <div className="flex items-center gap-2 text-blue-600">
-                        <Sparkles className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Generating...</span>
+            {generatedTracks.map((track) => {
+              const isCurrentlyPlaying = currentlyPlaying === track.id;
+              console.log(`Track ${track.id} - Currently playing: ${isCurrentlyPlaying}`);
+              
+              return (
+                <motion.div
+                  key={track.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-6 shadow-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-semibold text-gray-800">{track.title}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {styles.find(s => s.value === track.style)?.label}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {track.duration} min
+                        </Badge>
                       </div>
-                    ) : (
-                      <>
-                        {currentlyPlaying === track.id ? (
+                      <p className="text-gray-600 text-sm line-clamp-2">{track.prompt}</p>
+                      <p className="text-xs text-gray-400">
+                        Generated {track.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      {track.isGenerating ? (
+                        <div className="flex items-center gap-2 text-blue-600">
+                          <Sparkles className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Generating...</span>
+                        </div>
+                      ) : (
+                        <>
+                          {isCurrentlyPlaying ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700 border border-red-200"
+                              onClick={stopAudio}
+                              title="Stop playing"
+                            >
+                              <Square className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-600 hover:text-blue-600 border border-gray-200"
+                              onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!, track.id)}
+                              disabled={!track.url && !track.audioUrl}
+                              title="Play audio"
+                            >
+                              <Play className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-red-600 hover:text-red-700 border border-red-200"
-                            onClick={stopAudio}
-                            title="Stop playing"
-                          >
-                            <Square className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-gray-600 hover:text-blue-600 border border-gray-200"
-                            onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!, track.id)}
+                            className="text-gray-600 hover:text-green-600"
+                            onClick={() => (track.url || track.audioUrl) && downloadAudio(track.url || track.audioUrl!, track.title)}
                             disabled={!track.url && !track.audioUrl}
-                            title="Play audio"
                           >
-                            <Play className="w-4 h-4" />
+                            <Download className="w-4 h-4" />
                           </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-gray-600 hover:text-green-600"
-                          onClick={() => (track.url || track.audioUrl) && downloadAudio(track.url || track.audioUrl!, track.title)}
-                          disabled={!track.url && !track.audioUrl}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
-                          <Heart className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
+                          <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
+                            <Heart className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       )}
