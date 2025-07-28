@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedTrack {
   id: string;
@@ -30,6 +31,54 @@ export const MusicGenerator: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
   const [showChat, setShowChat] = useState(false);
+
+  const pollForCompletion = async (trackId: string) => {
+    const checkStatus = async () => {
+      try {
+        const { data: track, error } = await supabase
+          .from('generated_tracks')
+          .select('*')
+          .eq('id', trackId)
+          .single();
+
+        if (error) {
+          console.error('Error checking track status:', error);
+          return;
+        }
+
+        if (track.status === 'completed' && track.audio_url) {
+          // Update the track in our local state
+          setGeneratedTracks(prev =>
+            prev.map(t =>
+              t.id === trackId
+                ? { ...t, isGenerating: false, audioUrl: track.audio_url }
+                : t
+            )
+          );
+          toast.success('Music generation completed!');
+        } else if (track.status === 'failed') {
+          // Update track to show failed status
+          setGeneratedTracks(prev =>
+            prev.map(t =>
+              t.id === trackId
+                ? { ...t, isGenerating: false }
+                : t
+            )
+          );
+          toast.error('Music generation failed. Please try again.');
+        } else {
+          // Still generating, check again in 5 seconds
+          setTimeout(checkStatus, 5000);
+        }
+      } catch (error) {
+        console.error('Error polling for completion:', error);
+        setTimeout(checkStatus, 5000);
+      }
+    };
+
+    // Start polling after 10 seconds (give the function time to start)
+    setTimeout(checkStatus, 10000);
+  };
 
   const styles = [
     { value: 'ambient', label: 'Ambient Healing' },
@@ -57,43 +106,57 @@ export const MusicGenerator: React.FC = () => {
     }
 
     setIsGenerating(true);
-    
+
     try {
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
-      
-      // Use demo audio based on style - these files exist in public folder
-      const demoAudioMap = {
-        'ambient': 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-        'nature': 'https://www.soundjay.com/misc/sounds/rain-02.wav',
-        'binaural': 'https://www.soundjay.com/misc/sounds/wind-chimes-02.wav',
-        'tibetan': 'https://www.soundjay.com/misc/sounds/meditation-bell.wav',
-        'piano': 'https://www.soundjay.com/misc/sounds/zen-garden.wav',
-        'crystal': 'https://www.soundjay.com/misc/sounds/white-noise.wav',
-        'meditation': 'https://www.soundjay.com/misc/sounds/ocean-wave.wav',
-        'chakra': 'https://www.soundjay.com/misc/sounds/singing-bowl.wav'
-      };
-      
-      const audioUrl = demoAudioMap[style as keyof typeof demoAudioMap] || '/audio/ambient-piano.mp3';
-      
-      // Create local track (no database storage)
-      const localTrack: GeneratedTrack = {
-        id: `local-${Date.now()}`,
+
+      // Call the actual MusicGen Supabase function
+      const response = await fetch('https://mtypyrsdbsoxrgzsxwsk.supabase.co/functions/v1/generate-music', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10eXB5cnNkYnNveHJnenN4d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5OTY5NzQsImV4cCI6MjA2NzU3Mjk3NH0.rIRFbCR4fFDftKrSu0EykIHrl91cKHN3hP8BRE-XOdU`
+        },
+        body: JSON.stringify({
+          prompt,
+          title: trackTitle,
+          style,
+          duration
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate music: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Music generation failed');
+      }
+
+      // Create track with generating status
+      const generatingTrack: GeneratedTrack = {
+        id: result.trackId,
         title: trackTitle,
         prompt,
         duration,
         style,
-        isGenerating: false,
+        isGenerating: true,
         timestamp: new Date(),
-        audioUrl
+        audioUrl: undefined
       };
-      
-      setGeneratedTracks(prev => [localTrack, ...prev]);
-      toast.success('Healing music created successfully!');
-      
+
+      setGeneratedTracks(prev => [generatingTrack, ...prev]);
+      toast.success('Music generation started! This may take 30-60 seconds for the first generation.');
+
+      // Poll for completion
+      pollForCompletion(result.trackId);
+
       // Clear form
       setPrompt('');
       setTitle('');
-      
+
     } catch (error) {
       console.error('Error generating music:', error);
       toast.error('Failed to generate music: ' + (error as Error).message);
