@@ -66,7 +66,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
             <img 
               src="/lovable-uploads/1c8c11f2-0d94-4413-8722-c94c6180fd33.png" 
               alt="Indara AI" 
-              className="h-24 w-auto"
+              className="h-8 w-auto"
             />
           </div>
           
