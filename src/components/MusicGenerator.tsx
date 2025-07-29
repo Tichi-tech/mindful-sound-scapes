@@ -50,9 +50,9 @@ export const MusicGenerator: React.FC = () => {
 
         if (track.status === 'completed' && track.audio_url) {
           // Update the track in our local state
-          setGeneratedTracks(prev =>
-            prev.map(t =>
-              t.id === trackId
+          setGeneratedTracks(prev => 
+            prev.map(t => 
+              t.id === trackId 
                 ? { ...t, isGenerating: false, audioUrl: track.audio_url }
                 : t
             )
@@ -60,9 +60,9 @@ export const MusicGenerator: React.FC = () => {
           toast.success('Music generation completed!');
         } else if (track.status === 'failed') {
           // Update track to show failed status
-          setGeneratedTracks(prev =>
-            prev.map(t =>
-              t.id === trackId
+          setGeneratedTracks(prev => 
+            prev.map(t => 
+              t.id === trackId 
                 ? { ...t, isGenerating: false }
                 : t
             )
@@ -111,7 +111,7 @@ export const MusicGenerator: React.FC = () => {
 
     try {
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
-
+      
       // Call the actual MusicGen Supabase function
       const response = await fetch('https://mtypyrsdbsoxrgzsxwsk.supabase.co/functions/v1/generate-music', {
         method: 'POST',
@@ -132,7 +132,7 @@ export const MusicGenerator: React.FC = () => {
       }
 
       const result = await response.json();
-
+      
       if (!result.success) {
         throw new Error(result.error || 'Music generation failed');
       }
@@ -148,13 +148,13 @@ export const MusicGenerator: React.FC = () => {
         timestamp: new Date(),
         audioUrl: undefined
       };
-
+      
       setGeneratedTracks(prev => [generatingTrack, ...prev]);
       toast.success('Music generation started! This may take 30-60 seconds for the first generation.');
-
+      
       // Poll for completion
       pollForCompletion(result.trackId);
-
+      
       // Clear form
       setPrompt('');
       setTitle('');
