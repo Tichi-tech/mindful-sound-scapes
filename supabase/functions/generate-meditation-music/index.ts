@@ -18,7 +18,11 @@ serve(async (req) => {
     console.log('Generating meditation music with prompt:', prompt);
     console.log('Duration (seconds):', duration);
 
-    // Call your MusicGen-melody endpoint
+    // Limit duration to reasonable length for MusicGen (max 30 seconds for testing)
+    const limitedDuration = Math.min(duration, 30);
+    console.log('Limited duration for MusicGen:', limitedDuration);
+
+    // Call your MusicGen-melody endpoint with correct parameters
     const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
       method: 'POST',
       headers: {
@@ -26,8 +30,10 @@ serve(async (req) => {
         'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
       },
       body: JSON.stringify({
-        prompt: prompt,
-        duration: duration
+        text: prompt,  // Changed from 'prompt' to 'text' - common API parameter name
+        max_new_tokens: limitedDuration * 50, // Approximate tokens for duration
+        do_sample: true,
+        temperature: 0.7
       })
     });
 
