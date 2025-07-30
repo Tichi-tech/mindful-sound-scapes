@@ -81,33 +81,31 @@ ${technique === 'mantra' ? 'Choose a peaceful word or phrase. Repeat it silently
 
 Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`;
 
-      // Generate meditation music using MusicGen-melody
+      // Generate meditation music using MusicGen-melody via Supabase Edge Function
       console.log('Generating meditation music...');
       toast.info('Generating personalized meditation music...');
       
       let audioUrl = null;
       try {
         const musicPrompt = `peaceful meditation music for ${technique} meditation, ${prompt}, ambient, calming, healing, therapeutic`;
+        const durationInSeconds = parseInt(duration.split('-')[1]) * 60; // Convert minutes to seconds
         
-        const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const { data: musicData, error: musicError } = await supabase.functions.invoke('generate-meditation-music', {
+          body: {
             prompt: musicPrompt,
-            duration: parseInt(duration.split('-')[1]) * 60 // Convert minutes to seconds
-          })
+            duration: durationInSeconds
+          }
         });
 
-        if (musicResponse.ok) {
-          const musicBlob = await musicResponse.blob();
-          // Create a local URL for the generated audio
-          audioUrl = URL.createObjectURL(musicBlob);
-          console.log('Music generated successfully');
+        if (musicError) {
+          console.error('Music generation error:', musicError);
+          toast.warning('Music generation failed, session created without audio');
+        } else if (musicData?.success && musicData?.audioUrl) {
+          audioUrl = musicData.audioUrl;
+          console.log('Music generated successfully:', audioUrl);
           toast.success('Meditation music generated!');
         } else {
-          console.error('Music generation failed:', musicResponse.statusText);
+          console.error('Music generation failed:', musicData);
           toast.warning('Music generation failed, session created without audio');
         }
       } catch (musicError) {
