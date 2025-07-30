@@ -367,20 +367,43 @@ export const MyLibrary: React.FC = () => {
                           <p className="text-sm text-muted-foreground line-clamp-3">{session.script}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toast.info('Text-to-speech playback coming soon!')}
-                            className="flex-1 border-success/20 text-success hover:bg-success/10"
-                          >
-                            <Play className="w-4 h-4 mr-2" />
-                            Play Session
-                          </Button>
+                          {session.audio_url ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => playAudio(session.audio_url!)}
+                                className="border-success/20 text-success hover:bg-success/10"
+                              >
+                                <Play className="w-4 h-4 mr-2" />
+                                Play Music
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => downloadAudio(session.audio_url!, session.title)}
+                                className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Download Audio
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="border-gray-200 text-gray-400"
+                            >
+                              <Play className="w-4 h-4 mr-2" />
+                              No Audio Available
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => downloadScript(session.script!, session.title)}
-                            className="flex-1 border-primary/20 text-primary hover:bg-primary/10"
+                            className="border-primary/20 text-primary hover:bg-primary/10"
                           >
                             <Download className="w-4 h-4 mr-2" />
                             Download Script
