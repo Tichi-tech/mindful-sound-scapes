@@ -18,28 +18,39 @@ serve(async (req) => {
     console.log('Generating meditation music with prompt:', prompt);
     console.log('Duration (seconds):', duration);
 
-    // Limit duration to reasonable length for MusicGen (max 30 seconds for testing)
+    // Limit duration to reasonable length for MusicGen
     const limitedDuration = Math.min(duration, 30);
     console.log('Limited duration for MusicGen:', limitedDuration);
 
-    // Call your MusicGen-melody endpoint with correct parameters
+    // Try different parameter formats for MusicGen-melody
+    const requestBody = {
+      prompt: prompt,
+      max_new_tokens: 256,
+      do_sample: true,
+      temperature: 0.8,
+      top_k: 250,
+      top_p: 0.0
+    };
+
+    console.log('Request body being sent:', JSON.stringify(requestBody, null, 2));
+
+    // Call your MusicGen-melody endpoint
     const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+        'ngrok-skip-browser-warning': 'true',
       },
-      body: JSON.stringify({
-        text: prompt,  // Changed from 'prompt' to 'text' - common API parameter name
-        max_new_tokens: limitedDuration * 50, // Approximate tokens for duration
-        do_sample: true,
-        temperature: 0.7
-      })
+      body: JSON.stringify(requestBody)
     });
 
+    console.log('MusicGen API response status:', musicResponse.status);
+    console.log('MusicGen API response headers:', Object.fromEntries(musicResponse.headers.entries()));
+
     if (!musicResponse.ok) {
-      console.error('MusicGen API error:', musicResponse.status, musicResponse.statusText);
-      throw new Error(`MusicGen API failed: ${musicResponse.statusText}`);
+      const errorText = await musicResponse.text();
+      console.error('MusicGen API error response:', errorText);
+      throw new Error(`MusicGen API failed: ${musicResponse.status} - ${errorText}`);
     }
 
     // Get the audio blob
