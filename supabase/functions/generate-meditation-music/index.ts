@@ -24,22 +24,76 @@ serve(async (req) => {
 
     console.log('Sending form data with prompt:', prompt);
 
-    // Call your MusicGen-melody endpoint with correct format
-    const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
-      method: 'POST',
-      headers: {
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: formData
-    });
-
-    console.log('MusicGen API response status:', musicResponse.status);
-    console.log('MusicGen API response content-type:', musicResponse.headers.get('content-type'));
-
-    if (!musicResponse.ok) {
-      const errorText = await musicResponse.text();
-      console.error('MusicGen API error response:', errorText);
-      throw new Error(`MusicGen API failed: ${musicResponse.status} - ${errorText}`);
+    // Call your MusicGen-melody endpoint with timeout and retry logic
+    let musicResponse;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`Attempt ${attempts}/${maxAttempts} to generate music`);
+      
+      try {
+        // Create AbortController for 2-minute timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
+        
+        musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: formData,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('MusicGen API response status:', musicResponse.status);
+        console.log('MusicGen API response content-type:', musicResponse.headers.get('content-type'));
+        
+        // Handle 503 (server busy) errors with retry
+        if (musicResponse.status === 503) {
+          console.log('Server busy (503), waiting 10 seconds before retry...');
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+            continue;
+          }
+        }
+        
+        if (!musicResponse.ok) {
+          const errorText = await musicResponse.text();
+          console.error('MusicGen API error response:', errorText);
+          
+          if (attempts === maxAttempts) {
+            throw new Error(`MusicGen API failed after ${maxAttempts} attempts: ${musicResponse.status} - ${errorText}`);
+          }
+          continue;
+        }
+        
+        // Success - break out of retry loop
+        break;
+        
+      } catch (error) {
+        console.error(`Attempt ${attempts} failed:`, error.message);
+        
+        if (error.name === 'AbortError') {
+          console.log('Request timed out after 2 minutes');
+          if (attempts < maxAttempts) {
+            console.log('Retrying...');
+            continue;
+          } else {
+            throw new Error('Music generation timed out after multiple attempts. The model may be loading - please try again in a few minutes.');
+          }
+        }
+        
+        if (attempts === maxAttempts) {
+          throw new Error(`Connection failed after ${maxAttempts} attempts: ${error.message}`);
+        }
+        
+        // Wait before retry for connection errors
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
     }
 
     // Get the audio blob
