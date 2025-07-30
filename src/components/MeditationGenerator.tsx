@@ -124,7 +124,8 @@ Continue with this practice for the remainder of your ${duration}-minute session
           technique,
           duration,
           status: 'completed',
-          script: generatedScript
+          script: generatedScript,
+          audio_url: audioUrl
         })
         .select()
         .single();
