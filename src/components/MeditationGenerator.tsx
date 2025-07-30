@@ -88,12 +88,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
       let audioUrl = null;
       try {
         const musicPrompt = `peaceful meditation music for ${technique} meditation, ${prompt}, ambient, calming, healing, therapeutic`;
-        const durationInSeconds = parseInt(duration.split('-')[1]) * 60; // Convert minutes to seconds
+        const fixedDuration = 30; // Always generate 30 seconds of audio
         
         const { data: musicData, error: musicError } = await supabase.functions.invoke('generate-meditation-music', {
           body: {
             prompt: musicPrompt,
-            duration: durationInSeconds
+            duration: fixedDuration
           }
         });
 
