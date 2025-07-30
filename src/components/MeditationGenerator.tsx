@@ -81,6 +81,40 @@ ${technique === 'mantra' ? 'Choose a peaceful word or phrase. Repeat it silently
 
 Continue with this practice for the remainder of your ${duration}-minute session. When you're ready, slowly open your eyes and return to your day with a sense of peace and clarity.`;
 
+      // Generate meditation music using MusicGen-melody
+      console.log('Generating meditation music...');
+      toast.info('Generating personalized meditation music...');
+      
+      let audioUrl = null;
+      try {
+        const musicPrompt = `peaceful meditation music for ${technique} meditation, ${prompt}, ambient, calming, healing, therapeutic`;
+        
+        const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: musicPrompt,
+            duration: parseInt(duration.split('-')[1]) * 60 // Convert minutes to seconds
+          })
+        });
+
+        if (musicResponse.ok) {
+          const musicBlob = await musicResponse.blob();
+          // Create a local URL for the generated audio
+          audioUrl = URL.createObjectURL(musicBlob);
+          console.log('Music generated successfully');
+          toast.success('Meditation music generated!');
+        } else {
+          console.error('Music generation failed:', musicResponse.statusText);
+          toast.warning('Music generation failed, session created without audio');
+        }
+      } catch (musicError) {
+        console.error('Error generating music:', musicError);
+        toast.warning('Could not generate music, session created without audio');
+      }
+
       console.log('Attempting to save session to database...');
 
       // Try to save to database
@@ -109,6 +143,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
           duration,
           technique,
           script: generatedScript,
+          audioUrl,
           isGenerating: false,
           timestamp: new Date()
         };
@@ -131,6 +166,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
         duration: session.duration,
         technique: session.technique,
         script: session.script,
+        audioUrl,
         isGenerating: false,
         timestamp: new Date(session.created_at)
       };
@@ -150,9 +186,17 @@ Continue with this practice for the remainder of your ${duration}-minute session
     }
   };
 
-  const playSession = (script: string) => {
-    // For now, just show the script. In a real implementation, this would use text-to-speech
-    toast.info('Text-to-speech playback coming soon!');
+  const playSession = (session: GeneratedSession) => {
+    if (session.audioUrl) {
+      const audio = new Audio(session.audioUrl);
+      audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        toast.error('Could not play audio. Please try again.');
+      });
+      toast.success('Playing meditation music...');
+    } else {
+      toast.info('No audio available for this session');
+    }
   };
 
   const downloadSession = (session: GeneratedSession) => {
@@ -370,11 +414,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => playSession(session.script!)}
+                            onClick={() => playSession(session)}
                             className="flex-1 border-green-200 text-green-600 hover:bg-green-50"
+                            disabled={!session.audioUrl}
                           >
                             <Play className="w-4 h-4 mr-2" />
-                            Play Session
+                            {session.audioUrl ? 'Play Music' : 'No Audio'}
                           </Button>
                           <Button
                             variant="outline"
