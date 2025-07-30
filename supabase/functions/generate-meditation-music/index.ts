@@ -18,34 +18,23 @@ serve(async (req) => {
     console.log('Generating meditation music with prompt:', prompt);
     console.log('Duration (seconds):', duration);
 
-    // Limit duration to reasonable length for MusicGen
-    const limitedDuration = Math.min(duration, 30);
-    console.log('Limited duration for MusicGen:', limitedDuration);
+    // Create FormData for multipart/form-data request
+    const formData = new FormData();
+    formData.append('prompt', prompt);
 
-    // Try different parameter formats for MusicGen-melody
-    const requestBody = {
-      prompt: prompt,
-      max_new_tokens: 256,
-      do_sample: true,
-      temperature: 0.8,
-      top_k: 250,
-      top_p: 0.0
-    };
+    console.log('Sending form data with prompt:', prompt);
 
-    console.log('Request body being sent:', JSON.stringify(requestBody, null, 2));
-
-    // Call your MusicGen-melody endpoint
+    // Call your MusicGen-melody endpoint with correct format
     const musicResponse = await fetch('https://2290221b1dc0.ngrok-free.app/generate', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true',
       },
-      body: JSON.stringify(requestBody)
+      body: formData
     });
 
     console.log('MusicGen API response status:', musicResponse.status);
-    console.log('MusicGen API response headers:', Object.fromEntries(musicResponse.headers.entries()));
+    console.log('MusicGen API response content-type:', musicResponse.headers.get('content-type'));
 
     if (!musicResponse.ok) {
       const errorText = await musicResponse.text();
