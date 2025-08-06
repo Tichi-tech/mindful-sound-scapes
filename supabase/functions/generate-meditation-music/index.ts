@@ -38,7 +38,7 @@ serve(async (req) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
         
-        musicResponse = await fetch('https://92c455f2430e.ngrok-free.app/generate', {
+        musicResponse = await fetch('https://b5ec4ae99efc.ngrok-free.app/generate', {
           method: 'POST',
           headers: {
             'ngrok-skip-browser-warning': 'true',
