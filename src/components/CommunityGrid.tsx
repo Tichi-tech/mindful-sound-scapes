@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCommunityTracks } from '@/hooks/useCommunityTracks';
+import { useAdminStatus } from '@/hooks/useAdminStatus';
 import type { CommunityTrack } from '@/hooks/useCommunityTracks';
 
 interface CommunityGridProps {
@@ -12,6 +13,7 @@ interface CommunityGridProps {
 
 export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) => {
   const { tracks, loading, error } = useCommunityTracks();
+  const { isAdmin } = useAdminStatus();
 
   if (loading) {
     return (
@@ -60,8 +62,8 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
 
   return (
     <div className="space-y-6">
-      {/* Featured Section */}
-      {featuredTracks.length > 0 && (
+      {/* Featured Section - Only visible to admins */}
+      {isAdmin && featuredTracks.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Featured Creations</h2>
@@ -135,10 +137,12 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
       </div>
       )}
 
-      {/* All Creations */}
+      {/* Community Creations - Visible to everyone */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Community Creations</h2>
+          <h2 className="text-xl font-semibold">
+            {isAdmin ? 'All Community Creations' : 'Community Creations'}
+          </h2>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">Latest</Button>
             <Button variant="outline" size="sm">Popular</Button>
