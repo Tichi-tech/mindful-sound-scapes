@@ -1,5 +1,5 @@
-import React from 'react';
-import { Heart, Play, Download, Clock, User, Headphones } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Heart, Play, Pause, Download, Clock, User, Headphones } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,51 @@ interface CommunityGridProps {
 export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) => {
   const { tracks, loading, error } = useCommunityTracks();
   const { isAdmin } = useAdminStatus();
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+
+  const handlePlayPause = (track: CommunityTrack) => {
+    if (!track.audio_url) {
+      console.log('No audio URL available for track:', track.title);
+      return;
+    }
+
+    // Stop any currently playing audio
+    if (currentlyPlaying && currentlyPlaying !== track.id) {
+      const currentAudio = audioRefs.current[currentlyPlaying];
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    }
+
+    // Get or create audio element for this track
+    if (!audioRefs.current[track.id]) {
+      const audio = new Audio(track.audio_url);
+      audio.addEventListener('ended', () => {
+        setCurrentlyPlaying(null);
+      });
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error for track:', track.title, e);
+        setCurrentlyPlaying(null);
+      });
+      audioRefs.current[track.id] = audio;
+    }
+
+    const audio = audioRefs.current[track.id];
+
+    if (currentlyPlaying === track.id) {
+      // Pause current track
+      audio.pause();
+      setCurrentlyPlaying(null);
+    } else {
+      // Play new track
+      audio.play().catch(e => {
+        console.error('Failed to play audio:', e);
+      });
+      setCurrentlyPlaying(track.id);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,8 +129,20 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button size="sm" variant="secondary" className="rounded-full w-12 h-12 p-0">
-                    <Play className="w-4 h-4 fill-current" />
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    className="rounded-full w-12 h-12 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayPause(track);
+                    }}
+                  >
+                    {currentlyPlaying === track.id ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4 fill-current" />
+                    )}
                   </Button>
                 </div>
                 <Badge className={`absolute top-2 left-2 ${getTypeColor(track.type)}`}>
@@ -164,8 +221,20 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button size="sm" variant="secondary" className="rounded-full w-10 h-10 p-0">
-                    <Play className="w-3 h-3 fill-current" />
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    className="rounded-full w-10 h-10 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayPause(track);
+                    }}
+                  >
+                    {currentlyPlaying === track.id ? (
+                      <Pause className="w-3 h-3" />
+                    ) : (
+                      <Play className="w-3 h-3 fill-current" />
+                    )}
                   </Button>
                 </div>
                 <Badge className={`absolute top-2 left-2 text-xs ${getTypeColor(track.type)}`}>
