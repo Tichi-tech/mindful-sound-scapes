@@ -5,7 +5,6 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { TopBar } from '@/components/TopBar';
 import { GeneratorSelection } from '@/components/GeneratorSelection';
-import { AudioPlayer } from '@/components/AudioPlayer';
 import { MyLibrary } from '@/components/MyLibrary';
 import { MinimalHero } from '@/components/MinimalHero';
 import { CommunityGrid } from '@/components/CommunityGrid';
@@ -68,10 +67,7 @@ const Index = () => {
                       onStartGenerating={() => handleViewChange('generate')} 
                       onTryWithoutLogin={() => {/* Handle guest mode */}}
                     />
-                    <CommunityGrid onTrackSelect={(track) => setSelectedSound(track.audio_url || track.title)} />
-                    <div className="fixed bottom-4 right-4 z-50">
-                      <AudioPlayer selectedSound={selectedSound} />
-                    </div>
+                    <CommunityGrid />
                   </div>
                 )}
                 
