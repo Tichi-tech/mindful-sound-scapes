@@ -68,7 +68,7 @@ const Index = () => {
                       onStartGenerating={() => handleViewChange('generate')} 
                       onTryWithoutLogin={() => {/* Handle guest mode */}}
                     />
-                    <CommunityGrid onTrackSelect={(track) => setSelectedSound(track.title)} />
+                    <CommunityGrid onTrackSelect={(track) => setSelectedSound(track.audio_url || track.title)} />
                     <div className="fixed bottom-4 right-4 z-50">
                       <AudioPlayer selectedSound={selectedSound} />
                     </div>

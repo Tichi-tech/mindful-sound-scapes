@@ -3,102 +3,45 @@ import { Heart, Play, Download, Clock, User, Headphones } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-interface CommunityTrack {
-  id: string;
-  title: string;
-  type: 'music' | 'meditation' | 'collection';
-  duration: string;
-  plays: number;
-  likes: number;
-  creator: string;
-  createdAt: string;
-  thumbnail: string;
-  tags: string[];
-  featured?: boolean;
-}
-
-const mockTracks: CommunityTrack[] = [
-  {
-    id: '1',
-    title: 'Deep Ocean Meditation',
-    type: 'meditation',
-    duration: '15:30',
-    plays: 1240,
-    likes: 87,
-    creator: 'Sarah Chen',
-    createdAt: '2h ago',
-    thumbnail: '/lovable-uploads/61365487-5f27-498b-b7d6-6abfa41bf77c.png',
-    tags: ['sleep', 'ocean', 'calm'],
-    featured: true,
-  },
-  {
-    id: '2',
-    title: 'Forest Rain Healing',
-    type: 'music',
-    duration: '12:45',
-    plays: 856,
-    likes: 64,
-    creator: 'Alex Rivers',
-    createdAt: '4h ago',
-    thumbnail: '/lovable-uploads/3357473d-ea2d-4c95-9653-adc79c46974b.png',
-    tags: ['nature', 'rain', 'healing'],
-  },
-  {
-    id: '3',
-    title: 'Morning Clarity Collection',
-    type: 'collection',
-    duration: '45:00',
-    plays: 2100,
-    likes: 156,
-    creator: 'Meditation Studio',
-    createdAt: '1d ago',
-    thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-    tags: ['morning', 'focus', 'energy'],
-  },
-  {
-    id: '4',
-    title: 'Tibetan Bowls Session',
-    type: 'meditation',
-    duration: '20:15',
-    plays: 695,
-    likes: 43,
-    creator: 'Zen Master',
-    createdAt: '6h ago',
-    thumbnail: 'https://images.unsplash.com/photo-1602192509154-0b900ee1f851?w=400&h=300&fit=crop',
-    tags: ['tibetan', 'bowls', 'chakra'],
-  },
-  {
-    id: '5',
-    title: 'Binaural Focus Beats',
-    type: 'music',
-    duration: '30:00',
-    plays: 1580,
-    likes: 92,
-    creator: 'BrainWave Pro',
-    createdAt: '8h ago',
-    thumbnail: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=300&fit=crop',
-    tags: ['binaural', 'focus', 'productivity'],
-  },
-  {
-    id: '6',
-    title: 'Sunset Piano Meditation',
-    type: 'music',
-    duration: '18:20',
-    plays: 1120,
-    likes: 78,
-    creator: 'Piano Zen',
-    createdAt: '12h ago',
-    thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop',
-    tags: ['piano', 'sunset', 'peaceful'],
-  },
-];
+import { useCommunityTracks } from '@/hooks/useCommunityTracks';
+import type { CommunityTrack } from '@/hooks/useCommunityTracks';
 
 interface CommunityGridProps {
   onTrackSelect?: (track: CommunityTrack) => void;
 }
 
 export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) => {
+  const { tracks, loading, error } = useCommunityTracks();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-muted rounded-lg aspect-video mb-3"></div>
+              <div className="h-4 bg-muted rounded mb-2"></div>
+              <div className="h-3 bg-muted rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Failed to load tracks: {error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const featuredTracks = tracks.filter(track => track.featured);
+  const allTracks = tracks.slice(0, 12); // Show first 12 tracks
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'meditation': return <Headphones className="w-3 h-3" />;
@@ -118,14 +61,15 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
   return (
     <div className="space-y-6">
       {/* Featured Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Featured Creations</h2>
-          <Button variant="ghost" size="sm">View All</Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mockTracks.filter(track => track.featured).map((track) => (
+      {featuredTracks.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Featured Creations</h2>
+            <Button variant="ghost" size="sm">View All</Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {featuredTracks.map((track) => (
             <Card 
               key={track.id} 
               className="group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
@@ -189,6 +133,7 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
           ))}
         </div>
       </div>
+      )}
 
       {/* All Creations */}
       <div className="space-y-4">
@@ -202,7 +147,7 @@ export const CommunityGrid: React.FC<CommunityGridProps> = ({ onTrackSelect }) =
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {mockTracks.slice(1).map((track) => (
+          {allTracks.map((track) => (
             <Card 
               key={track.id} 
               className="group hover:shadow-md transition-all duration-200 cursor-pointer"
