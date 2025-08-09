@@ -1,0 +1,68 @@
+import React from 'react';
+import { Search, LogIn, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+
+export const TopBar: React.FC = () => {
+  const { isAuthenticated, user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleAuthAction = async () => {
+    if (isAuthenticated) {
+      const { error } = await signOut();
+      if (!error) {
+        toast({
+          title: "Signed out",
+          description: "You've been successfully signed out.",
+        });
+      }
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  return (
+    <header className="h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 gap-4">
+      <SidebarTrigger className="-ml-1" />
+      
+      <div className="flex-1 flex items-center justify-center max-w-md mx-auto">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search healing music, meditations..."
+            className="pl-10 bg-muted/30 border-0 focus-visible:ring-1"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleAuthAction}
+          variant={isAuthenticated ? "ghost" : "default"}
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {isAuthenticated ? (
+            <>
+              <User className="w-4 h-4" />
+              <span className="hidden sm:block">
+                {user?.email?.split('@')[0] || 'Profile'}
+              </span>
+              <LogOut className="w-3 h-3" />
+            </>
+          ) : (
+            <>
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:block">Sign In</span>
+            </>
+          )}
+        </Button>
+      </div>
+    </header>
+  );
+};
