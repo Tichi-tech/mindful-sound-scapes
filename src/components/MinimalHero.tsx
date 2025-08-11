@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap } from 'lucide-react';
+import { ShareButtons } from '@/components/ui/share-buttons';
 
 interface MinimalHeroProps {
   onStartGenerating: () => void;
@@ -71,6 +72,18 @@ export const MinimalHero: React.FC<MinimalHeroProps> = ({
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           Join <span className="font-semibold text-primary">10,000+</span> users creating personalized soundscapes
+        </motion.div>
+        
+        <motion.div 
+          className="mt-6 flex justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          <ShareButtons 
+            title="Tichi - AI-Powered Meditation Platform"
+            description="Transform any moment into a peaceful experience with AI-powered healing music and guided meditations tailored just for you."
+          />
         </motion.div>
       </div>
     </motion.div>
