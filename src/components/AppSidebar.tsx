@@ -70,8 +70,8 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="flex items-center space-x-2">
+          <div className="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden">
             <img 
               src="/lovable-uploads/497d3c58-1d67-4a5f-9a1b-529229b57694.png" 
               alt="Indara AI Logo" 
