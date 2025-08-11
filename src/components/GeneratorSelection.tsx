@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Music, Brain, ArrowLeft } from 'lucide-react';
+import { Music, Brain, ArrowLeft, Headphones } from 'lucide-react';
 import { MusicGenerator } from './MusicGenerator';
 import { MeditationGenerator } from './MeditationGenerator';
+import { MeditationStudio } from './MeditationStudio';
 
-type GeneratorType = 'music' | 'meditation' | null;
+type GeneratorType = 'music' | 'meditation' | 'studio' | null;
 
 export const GeneratorSelection: React.FC = () => {
   const [selectedGenerator, setSelectedGenerator] = useState<GeneratorType>(null);
@@ -43,6 +44,10 @@ export const GeneratorSelection: React.FC = () => {
     );
   }
 
+  if (selectedGenerator === 'studio') {
+    return <MeditationStudio />;
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <motion.div
@@ -59,7 +64,7 @@ export const GeneratorSelection: React.FC = () => {
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-3 gap-6">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -131,6 +136,44 @@ export const GeneratorSelection: React.FC = () => {
                 style={{ background: 'var(--gradient-meditation)' }}
               >
                 Start Generating Sessions
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 p-4 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'var(--gradient-meditation)' }}>
+                <Headphones className="h-10 w-10 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-card-foreground">
+                Meditation Studio
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Professional meditation creation studio
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Professional interface with advanced audio controls, session management, and real-time waveform visualization.
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Studio-grade interface</li>
+                <li>• Audio waveform visualization</li>
+                <li>• Session library management</li>
+                <li>• Advanced creation tools</li>
+              </ul>
+              <Button
+                onClick={() => setSelectedGenerator('studio')}
+                className="w-full mt-6 text-white"
+                style={{ background: 'var(--gradient-meditation)' }}
+              >
+                Open Studio
               </Button>
             </CardContent>
           </Card>
