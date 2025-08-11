@@ -27,7 +27,7 @@ export const MusicGenerator: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
-  const [duration, setDuration] = useState('2-3');
+  const [duration, setDuration] = useState('3');
   const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -94,11 +94,9 @@ export const MusicGenerator: React.FC = () => {
   ];
 
   const durations = [
-    { value: '1-2', label: '1-2 minutes' },
-    { value: '2-3', label: '2-3 minutes' },
-    { value: '3-5', label: '3-5 minutes' },
-    { value: '5-10', label: '5-10 minutes' },
-    { value: '10-15', label: '10-15 minutes' }
+    { value: '3', label: '3 minutes' },
+    { value: '5', label: '5 minutes' },
+    { value: '10', label: '10 minutes' }
   ];
 
   const handleGenerate = async () => {

@@ -27,7 +27,7 @@ export const MeditationGenerator: React.FC = () => {
   const [sessionName, setSessionName] = useState('CalmAI Session 1.0');
   const [prompt, setPrompt] = useState('');
   const [technique, setTechnique] = useState('mindfulness');
-  const [duration, setDuration] = useState('10');
+  const [duration, setDuration] = useState('3');
   const [quality, setQuality] = useState('high');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -316,11 +316,9 @@ Continue with this practice for the remainder of your ${duration}-minute session
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="3">3 min</SelectItem>
                           <SelectItem value="5">5 min</SelectItem>
                           <SelectItem value="10">10 min</SelectItem>
-                          <SelectItem value="15">15 min</SelectItem>
-                          <SelectItem value="20">20 min</SelectItem>
-                          <SelectItem value="30">30 min</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
