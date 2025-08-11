@@ -420,10 +420,6 @@ Continue with this practice for the remainder of your ${duration}-minute session
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-
-              <div className="text-sm text-muted-foreground">
-                Upgrade plan
-              </div>
             </div>
           </div>
 
