@@ -16,15 +16,35 @@ export const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated and listen for auth changes
   useEffect(() => {
+    // Listen for auth state changes (including OAuth callbacks)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in successfully, redirecting...');
+        navigate('/', { replace: true });
+      }
+      
+      if (event === 'TOKEN_REFRESHED' && session) {
+        console.log('Token refreshed, user authenticated');
+        navigate('/', { replace: true });
+      }
+    });
+
+    // Also check for existing session
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session?.user?.email);
       if (session) {
         navigate('/', { replace: true });
       }
     };
+    
     checkAuth();
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
