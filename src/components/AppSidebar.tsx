@@ -17,8 +17,8 @@ import {
 } from '@/components/ui/sidebar';
 
 interface AppSidebarProps {
-  currentView: 'home' | 'generate' | 'library' | 'explore' | 'admin';
-  onViewChange: (view: 'home' | 'generate' | 'library' | 'explore' | 'admin') => void;
+  currentView: 'home' | 'music' | 'meditation' | 'library' | 'explore' | 'admin';
+  onViewChange: (view: 'home' | 'music' | 'meditation' | 'library' | 'explore' | 'admin') => void;
 }
 
 export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
@@ -28,7 +28,7 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   const isCollapsed = state === "collapsed";
 
   const handleNavClick = (viewId: string) => {
-    if ((viewId === 'generate' || viewId === 'library' || viewId === 'admin') && !isAuthenticated) {
+    if ((viewId === 'music' || viewId === 'meditation' || viewId === 'library' || viewId === 'admin') && !isAuthenticated) {
       // Will be handled by parent component to redirect to auth
       return;
     }
@@ -37,8 +37,8 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
 
   const toolItems = [
     { id: 'home', title: 'Home', icon: Home, public: true },
-    { id: 'generate', title: 'Text to Healing Music', icon: Music, public: false, badge: 'NEW' },
-    { id: 'generate-meditation', title: 'Guided Meditation Creator', icon: Brain, public: false },
+    { id: 'music', title: 'Text to Healing Music', icon: Music, public: false, badge: 'NEW' },
+    { id: 'meditation', title: 'Guided Meditation Creator', icon: Brain, public: false },
     { id: 'generate-sound', title: 'Sound to Session', icon: Layers, public: false },
     { id: 'generate-effects', title: 'Effects & Enhancements', icon: Sparkles, public: false },
   ];
@@ -53,7 +53,6 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   ];
 
   const isActive = (id: string) => {
-    if (id.startsWith('generate') && currentView === 'generate') return true;
     return currentView === id;
   };
 
