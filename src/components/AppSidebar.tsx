@@ -70,8 +70,8 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
             <img 
               src="/lovable-uploads/497d3c58-1d67-4a5f-9a1b-529229b57694.png" 
               alt="Indara AI Logo" 
@@ -79,9 +79,9 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
             />
           </div>
           {!isCollapsed && (
-            <div>
-              <h2 className="font-semibold text-sidebar-foreground">Indara AI</h2>
-              <p className="text-xs text-sidebar-foreground/60">Healing Music Platform</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-sidebar-foreground text-lg">Indara AI</h2>
+              <p className="text-xs text-sidebar-foreground/60 whitespace-nowrap overflow-hidden text-ellipsis">Healing Music Platform</p>
             </div>
           )}
         </div>
