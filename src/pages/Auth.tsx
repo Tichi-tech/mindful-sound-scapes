@@ -30,21 +30,34 @@ export const Auth = () => {
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Starting Google OAuth sign in...');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
+      console.log('OAuth response:', { data, error });
+
       if (error) {
+        console.error('OAuth error:', error);
         toast({
           title: "Authentication Failed",
           description: error.message,
           variant: "destructive",
         });
+      } else {
+        // The redirect will happen automatically, no need to handle success here
+        console.log('OAuth initiated successfully');
       }
     } catch (error: any) {
+      console.error('OAuth catch error:', error);
       toast({
         title: "An error occurred",
         description: "Something went wrong. Please try again.",
