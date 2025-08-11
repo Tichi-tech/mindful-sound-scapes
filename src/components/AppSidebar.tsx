@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, Music, Brain, Layers, Sparkles, Book, Compass, User, Shield } from 'lucide-react';
+import { ShareButtons } from '@/components/ui/share-buttons';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
 import {
@@ -152,6 +153,15 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
+              {!isCollapsed && (
+                <div className="px-2 py-3">
+                  <ShareButtons 
+                    title="Indara AI - Healing Music Platform"
+                    description="AI-powered healing music and guided meditation platform"
+                    className="justify-center"
+                  />
+                </div>
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         )}
