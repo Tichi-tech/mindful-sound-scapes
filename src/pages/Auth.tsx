@@ -31,12 +31,20 @@ export const Auth = () => {
         console.log('Token refreshed, user authenticated');
         navigate('/', { replace: true });
       }
+
+      // Log any sign in errors
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+      }
     });
 
     // Also check for existing session
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session?.user?.email);
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('Current session check:', { session: session?.user?.email, error });
+      if (error) {
+        console.error('Session check error:', error);
+      }
       if (session) {
         navigate('/', { replace: true });
       }
@@ -44,8 +52,22 @@ export const Auth = () => {
     
     checkAuth();
 
+    // Check URL params for OAuth errors
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    
+    if (error) {
+      console.error('OAuth URL error:', { error, errorDescription });
+      toast({
+        title: "Authentication Failed",
+        description: errorDescription || error,
+        variant: "destructive",
+      });
+    }
+
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setLoading(true);
