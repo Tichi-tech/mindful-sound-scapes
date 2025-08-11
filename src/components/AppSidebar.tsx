@@ -149,20 +149,11 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
                       className={getNavClassName(item.id)}
                     >
                       <item.icon className="w-4 h-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+              {!isCollapsed && <span>{item.title}</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
-              {!isCollapsed && (
-                <div className="px-2 py-3">
-                  <ShareButtons 
-                    title="Indara AI - Healing Music Platform"
-                    description="AI-powered healing music and guided meditation platform"
-                    className="justify-center"
-                  />
-                </div>
-              )}
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -171,8 +162,17 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
         {isAuthenticated && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <div className="px-2 py-2">
+              <div className="px-2 py-2 space-y-3">
                 <CreditDisplay compact={isCollapsed} showDetails={!isCollapsed} />
+                {!isCollapsed && (
+                  <div className="pt-3 border-t border-border">
+                    <ShareButtons 
+                      title="Indara AI - Healing Music Platform"
+                      description="AI-powered healing music and guided meditation platform"
+                      className="justify-center"
+                    />
+                  </div>
+                )}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
