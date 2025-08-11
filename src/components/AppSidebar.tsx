@@ -73,7 +73,7 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
             <img 
-              src="/lovable-uploads/a2065b6b-1d91-48fb-9230-92b282aa464a.png" 
+              src="/lovable-uploads/497d3c58-1d67-4a5f-9a1b-529229b57694.png" 
               alt="Indara AI Logo" 
               className="w-full h-full object-contain"
             />
