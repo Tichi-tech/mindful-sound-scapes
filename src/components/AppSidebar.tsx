@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Music, Brain, Layers, Sparkles, Book, Compass, User, Shield } from 'lucide-react';
 import { ShareButtons } from '@/components/ui/share-buttons';
+import { CreditDisplay } from '@/components/credits/CreditDisplay';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
 import {
@@ -162,6 +163,17 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
                   />
                 </div>
               )}
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Credit Display for authenticated users */}
+        {isAuthenticated && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <div className="px-2 py-2">
+                <CreditDisplay compact={isCollapsed} showDetails={!isCollapsed} />
+              </div>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
