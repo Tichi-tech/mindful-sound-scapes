@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot, Square } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronDown, Lightbulb, Sparkles, Clock, Settings, Music, Play, Pause, Heart, Download, Square, Bot } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
 import { ShareButtons } from './ui/share-buttons';
-import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedTrack {
   id: string;
@@ -25,15 +25,62 @@ interface GeneratedTrack {
 }
 
 export const MusicGenerator: React.FC = () => {
+  const [sessionName, setSessionName] = useState('Healing Music Session 1.0');
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
   const [style, setStyle] = useState('ambient');
   const [duration, setDuration] = useState('3');
-  const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
+  const [quality, setQuality] = useState('high');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [activeTab, setActiveTab] = useState('music');
+  const [libraryTab, setLibraryTab] = useState('all');
+  const [generatedTracks, setGeneratedTracks] = useState<GeneratedTrack[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioInstance, setAudioInstance] = useState<HTMLAudioElement | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const quickTags = [
+    'Deep Sleep', 'Morning Focus', 'Stress Relief', 'Anxiety', 
+    'Productivity', 'Creativity', 'Calm', 'Energy'
+  ];
+
+  const fetchTracks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('generated_tracks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching tracks:', error);
+        return;
+      }
+
+      // Convert to our GeneratedTrack format
+      const tracks = (data || []).map(track => ({
+        id: track.id,
+        title: track.title || 'Untitled Track',
+        prompt: track.prompt || '',
+        duration: track.duration || '3',
+        style: track.style || 'ambient',
+        audioUrl: track.audio_url,
+        isGenerating: track.status === 'generating',
+        timestamp: new Date(track.created_at)
+      }));
+
+      setGeneratedTracks(tracks);
+    } catch (error) {
+      console.error('Error fetching tracks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTracks();
+  }, [refreshTrigger]);
 
   const pollForCompletion = async (trackId: string) => {
     const checkStatus = async () => {
@@ -50,27 +97,12 @@ export const MusicGenerator: React.FC = () => {
         }
 
         if (track.status === 'completed' && track.audio_url) {
-          // Update the track in our local state
-          setGeneratedTracks(prev => 
-            prev.map(t => 
-              t.id === trackId 
-                ? { ...t, isGenerating: false, audioUrl: track.audio_url }
-                : t
-            )
-          );
+          setRefreshTrigger(prev => prev + 1);
           toast.success('Music generation completed!');
         } else if (track.status === 'failed') {
-          // Update track to show failed status
-          setGeneratedTracks(prev => 
-            prev.map(t => 
-              t.id === trackId 
-                ? { ...t, isGenerating: false }
-                : t
-            )
-          );
+          setRefreshTrigger(prev => prev + 1);
           toast.error('Music generation failed. Please try again.');
         } else {
-          // Still generating, check again in 5 seconds
           setTimeout(checkStatus, 5000);
         }
       } catch (error) {
@@ -79,7 +111,6 @@ export const MusicGenerator: React.FC = () => {
       }
     };
 
-    // Start polling after 10 seconds (give the function time to start)
     setTimeout(checkStatus, 10000);
   };
 
@@ -94,12 +125,6 @@ export const MusicGenerator: React.FC = () => {
     { value: 'chakra', label: 'Chakra Healing' }
   ];
 
-  const durations = [
-    { value: '3', label: '3 minutes' },
-    { value: '5', label: '5 minutes' },
-    { value: '10', label: '10 minutes' }
-  ];
-
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast.error('Please describe what kind of healing music you want to create');
@@ -111,7 +136,6 @@ export const MusicGenerator: React.FC = () => {
     try {
       const trackTitle = title || `Healing Music ${generatedTracks.length + 1}`;
       
-      // Call the actual MusicGen Supabase function
       const response = await fetch('https://mtypyrsdbsoxrgzsxwsk.supabase.co/functions/v1/generate-music', {
         method: 'POST',
         headers: {
@@ -136,25 +160,9 @@ export const MusicGenerator: React.FC = () => {
         throw new Error(result.error || 'Music generation failed');
       }
 
-      // Create track with generating status
-      const generatingTrack: GeneratedTrack = {
-        id: result.trackId,
-        title: trackTitle,
-        prompt,
-        duration,
-        style,
-        isGenerating: true,
-        timestamp: new Date(),
-        audioUrl: undefined
-      };
-      
-      setGeneratedTracks(prev => [generatingTrack, ...prev]);
       toast.success('Music generation started! This may take 30-60 seconds for the first generation.');
-      
-      // Poll for completion
       pollForCompletion(result.trackId);
-      
-      // Clear form
+      setRefreshTrigger(prev => prev + 1);
       setPrompt('');
       setTitle('');
 
@@ -168,58 +176,45 @@ export const MusicGenerator: React.FC = () => {
 
   const playAudio = (url: string, trackId: string) => {
     try {
-      // If this track is currently playing, stop it
       if (currentlyPlaying === trackId && audioInstance) {
         audioInstance.pause();
         audioInstance.currentTime = 0;
         setCurrentlyPlaying(null);
         setAudioInstance(null);
-        toast.success('Audio stopped');
         return;
       }
 
-      // If another track is playing, stop it first
       if (audioInstance) {
         audioInstance.pause();
         audioInstance.currentTime = 0;
       }
 
-      console.log('Starting to play audio from URL:', url);
       const audio = new Audio(url);
-
-      // Set up event listeners
-      audio.addEventListener('loadstart', () => console.log('Audio loading started'));
-      audio.addEventListener('canplay', () => console.log('Audio can start playing'));
       audio.addEventListener('error', (e) => {
         console.error('Audio element error:', e);
-        toast.error('Unable to play audio. Please try downloading the file.');
+        toast.error('Unable to play audio');
         setCurrentlyPlaying(null);
         setAudioInstance(null);
       });
 
-      // When audio ends, reset state
       audio.addEventListener('ended', () => {
         setCurrentlyPlaying(null);
         setAudioInstance(null);
       });
 
-      // Start playing
       audio.play().then(() => {
         setCurrentlyPlaying(trackId);
         setAudioInstance(audio);
-        toast.success('Playing audio...');
       }).catch((error) => {
         console.error('Error playing audio:', error);
-        toast.error('Unable to play audio. Please try downloading the file.');
+        toast.error('Unable to play audio');
         setCurrentlyPlaying(null);
         setAudioInstance(null);
       });
 
     } catch (error) {
       console.error('Error creating audio element:', error);
-      toast.error('Unable to play audio. Please try downloading the file.');
-      setCurrentlyPlaying(null);
-      setAudioInstance(null);
+      toast.error('Unable to play audio');
     }
   };
 
@@ -238,249 +233,401 @@ export const MusicGenerator: React.FC = () => {
   const handleChatEnrichment = (enrichedPrompt: string) => {
     setPrompt(enrichedPrompt);
     setShowChat(false);
-    toast.success('Prompt enriched by Indara AI! You can now generate your music.');
+    toast.success('Prompt enriched by AI!');
   };
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* AI Chat Interface */}
-      {showChat ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
+  const addQuickTag = (tag: string) => {
+    if (!prompt.includes(tag)) {
+      setPrompt(prev => prev ? `${prev}, ${tag.toLowerCase()}` : tag.toLowerCase());
+    }
+  };
+
+  const handlePlayTrack = (trackId: string) => {
+    setCurrentlyPlaying(currentlyPlaying === trackId ? null : trackId);
+  };
+
+  const getFilteredTracks = () => {
+    switch (libraryTab) {
+      case 'music':
+        return generatedTracks.filter(track => track.audioUrl);
+      case 'favorites':
+        return [];
+      default:
+        return generatedTracks;
+    }
+  };
+
+  const getBackgroundImage = (style: string) => {
+    switch (style.toLowerCase()) {
+      case 'ambient':
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      case 'nature':
+        return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+      case 'binaural':
+        return 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+      case 'tibetan':
+        return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+      case 'piano':
+        return 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
+      case 'crystal':
+        return 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+      case 'meditation':
+        return 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+      case 'chakra':
+        return 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)';
+      default:
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+  };
+
+  if (showChat) {
+    return (
+      <div className="min-h-screen bg-background text-foreground p-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => setShowChat(false)}
+          className="mb-4"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-gray-800">AI Prompt Enhancement</h2>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowChat(false)}
-              className="border-gray-300"
-            >
-              Back to Generator
-            </Button>
-          </div>
+          ← Back to Generator
+        </Button>
+        <h2 className="text-xl font-semibold mb-4">AI Prompt Enhancement</h2>
+        <div className="bg-card rounded-lg p-4 border">
           <ChatInterface onSoundRecommendation={handleChatEnrichment} />
-        </motion.div>
-      ) : (
-        <>
-          {/* Generator Interface */}
-          <Card className="p-8 bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold text-gray-800">Generate Healing Music</h2>
-                <p className="text-gray-600">Describe your vision and let AI create the perfect healing soundscape</p>
-                <div className="flex justify-center gap-3 mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowChat(true)}
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                  >
-                    <Bot className="w-4 h-4 mr-2" />
-                    Get AI Help with Prompt
-                  </Button>
-                </div>
-              </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Track Title (Optional)
-                </label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Morning Meditation, Deep Sleep Journey..."
-                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Music Style
-                </label>
-                <Select value={style} onValueChange={setStyle}>
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styles.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration
-                </label>
-                <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {durations.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Describe Your Healing Music
-                </label>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g., Gentle rain sounds with soft piano melodies for deep relaxation and stress relief. Include subtle nature sounds like birds chirping in the distance..."
-                  className="h-32 border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
-                />
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 text-lg font-medium"
-              >
-                {isGenerating ? (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                    Generating Your Music...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-5 h-5 mr-2" />
-                    Generate Healing Music
-                  </>
-                )}
-              </Button>
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex h-screen">
+        {/* Left Sidebar - Generator */}
+        <div className="w-80 bg-card border-r border-border flex-shrink-0 flex flex-col">
+          {/* Header */}
+          <div className="p-6 border-b border-border">
+            <h1 className="text-xl font-semibold mb-2">Healing Music Generator</h1>
+            
+            {/* Session Selector */}
+            <div className="relative">
+              <Select value={sessionName} onValueChange={setSessionName}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                  <ChevronDown className="w-4 h-4" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Healing Music Session 1.0">Healing Music Session 1.0</SelectItem>
+                  <SelectItem value="Custom Session">Custom Session</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      </Card>
 
-      {/* Generated Tracks */}
-      {generatedTracks.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-gray-800">Your Generated Music</h3>
-          <div className="grid gap-4">
-            {generatedTracks.map((track) => {
-              const isCurrentlyPlaying = currentlyPlaying === track.id;
-              console.log(`Track ${track.id} - Currently playing: ${isCurrentlyPlaying}`);
-              
-              return (
-                <motion.div
-                  key={track.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-6 shadow-lg"
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full">
+                <TabsTrigger 
+                  value="music" 
+                  className="flex-1"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h4 className="text-lg font-semibold text-gray-800">{track.title}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {styles.find(s => s.value === track.style)?.label}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {track.duration} min
-                        </Badge>
-                      </div>
-                      <p className="text-gray-600 text-sm line-clamp-2">{track.prompt}</p>
-                      <p className="text-xs text-gray-400">
-                        Generated {track.timestamp.toLocaleTimeString()}
-                      </p>
+                  Text to Healing Music
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="sound" 
+                  className="flex-1"
+                >
+                  Sound Reference
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="music" className="space-y-6 mt-6">
+                {/* Prompt */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Prompt</label>
+                  <Textarea
+                    placeholder="Describe your healing music vision: mood, instruments, energy level, purpose..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="min-h-[120px] resize-none"
+                    rows={5}
+                  />
+                </div>
+
+                {/* Inspire Me Button */}
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowChat(true)}
+                  className="w-full"
+                >
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Inspire Me
+                </Button>
+
+                {/* Quick Tags */}
+                <div className="flex flex-wrap gap-2">
+                  {quickTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-secondary"
+                      onClick={() => addQuickTag(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+
+                {/* Controls */}
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Title (Optional)</label>
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g., Morning Meditation, Deep Sleep Journey..."
+                    />
+                  </div>
+
+                  {/* Duration and Style */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-2">
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        Duration
+                      </label>
+                      <Select value={duration} onValueChange={setDuration}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 min</SelectItem>
+                          <SelectItem value="5">5 min</SelectItem>
+                          <SelectItem value="10">10 min</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
-                      {track.isGenerating ? (
-                        <div className="flex items-center gap-2 text-blue-600">
-                          <Sparkles className="w-4 h-4 animate-spin" />
-                          <span className="text-sm">Generating...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`${currentlyPlaying === track.id ? 'text-red-600 hover:text-red-700 border border-red-200' : 'text-gray-600 hover:text-blue-600 border border-gray-200'}`}
-                            onClick={() => (track.url || track.audioUrl) && playAudio(track.url || track.audioUrl!, track.id)}
-                            disabled={!track.url && !track.audioUrl}
-                            title={currentlyPlaying === track.id ? "Stop playing" : "Play audio"}
-                          >
-                            {currentlyPlaying === track.id ? (
-                              <Square className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-gray-600 hover:text-green-600"
-                            onClick={() => (track.url || track.audioUrl) && downloadAudio(track.url || track.audioUrl!, track.title)}
-                            disabled={!track.url && !track.audioUrl}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
-                            <Heart className="w-4 h-4" />
-                          </Button>
-                          <ShareButtons 
-                            title={track.title}
-                            description={`Generated healing music: ${track.prompt.slice(0, 100)}...`}
-                            className="ml-2"
-                          />
-                        </>
-                      )}
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-2">
+                        <Music className="w-4 h-4 inline mr-1" />
+                        Style
+                      </label>
+                      <Select value={style} onValueChange={setStyle}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {styles.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
+
+                  {/* Quality */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <Settings className="w-4 h-4 inline mr-1" />
+                      High Fidelity
+                    </label>
+                    <Select value={quality} onValueChange={setQuality}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Quality</SelectItem>
+                        <SelectItem value="medium">Medium Quality</SelectItem>
+                        <SelectItem value="low">Low Quality</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="sound" className="mt-6">
+                <div className="text-center text-muted-foreground py-8">
+                  <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Sound reference functionality coming soon...</p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Create Button */}
+          <div className="p-6 border-t border-border">
+            <Button 
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg"
+            >
+              {isGenerating ? (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Music...
+                </>
+              ) : (
+                'Create Music'
+              )}
+            </Button>
           </div>
         </div>
-      )}
+        
+        {/* Right Panel - Music Library */}
+        <div className="flex-1 overflow-hidden bg-background flex flex-col">
+          {/* Header */}
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center justify-between">
+              <Tabs value={libraryTab} onValueChange={setLibraryTab}>
+                <TabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="music">Music</TabsTrigger>
+                  <TabsTrigger value="favorites">Favorites</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
 
-      {/* Quick Prompts */}
-      <Card className="p-6 bg-white/60 backdrop-blur-sm border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Start Ideas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            "Peaceful ocean waves with soft piano",
-            "Forest rain with Tibetan singing bowls",
-            "Gentle wind chimes for deep meditation", 
-            "Calming nature sounds for sleep",
-            "Binaural beats for focus and clarity",
-            "Crystal bowl healing frequencies",
-            "Zen garden ambience with water",
-            "Chakra balancing sound journey"
-          ].map((idea, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              size="sm"
-              onClick={() => setPrompt(idea)}
-              className="text-left h-auto p-3 text-gray-600 hover:text-blue-600 hover:border-blue-300"
-            >
-              <Music className="w-3 h-3 mr-2 flex-shrink-0" />
-              <span className="text-xs leading-tight">{idea}</span>
-            </Button>
-          ))}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+              </div>
+            ) : getFilteredTracks().length === 0 ? (
+              <div className="text-center text-muted-foreground py-12">
+                <p className="text-lg mb-2">No {libraryTab === 'all' ? 'tracks' : libraryTab} found</p>
+                <p className="text-sm">Create your first healing music to get started</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {getFilteredTracks().map((track) => (
+                  <TrackCard
+                    key={track.id}
+                    track={track}
+                    isPlaying={currentlyPlaying === track.id}
+                    onPlay={() => handlePlayTrack(track.id)}
+                    onActualPlay={() => track.audioUrl && playAudio(track.audioUrl, track.id)}
+                    onDownload={() => track.audioUrl && downloadAudio(track.audioUrl, track.title)}
+                    backgroundImage={getBackgroundImage(track.style)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-          </Card>
-        </>
-      )}
+      </div>
     </div>
+  );
+};
+
+// Track Card Component
+interface TrackCardProps {
+  track: GeneratedTrack;
+  isPlaying: boolean;
+  onPlay: () => void;
+  onActualPlay: () => void;
+  onDownload: () => void;
+  backgroundImage: string;
+}
+
+const TrackCard: React.FC<TrackCardProps> = ({ 
+  track, 
+  isPlaying, 
+  onPlay, 
+  onActualPlay, 
+  onDownload, 
+  backgroundImage 
+}) => {
+  return (
+    <motion.div
+      className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-300 cursor-pointer"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
+    >
+      <div 
+        className="relative aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center"
+        style={{ background: backgroundImage }}
+      >
+        <div className="absolute inset-0 bg-black/20"></div>
+        <Button
+          variant="secondary"
+          size="lg"
+          className="relative z-10 rounded-full w-16 h-16 p-0 bg-white/90 hover:bg-white shadow-lg"
+          onClick={onActualPlay}
+          disabled={track.isGenerating || !track.audioUrl}
+        >
+          {track.isGenerating ? (
+            <Sparkles className="w-6 h-6 animate-spin text-primary" />
+          ) : isPlaying ? (
+            <Pause className="w-6 h-6 text-primary" />
+          ) : (
+            <Play className="w-6 h-6 text-primary fill-current" />
+          )}
+        </Button>
+        
+        {track.isGenerating && (
+          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
+            Generating...
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4 space-y-3">
+        <div>
+          <h3 className="font-medium text-sm line-clamp-1">{track.title}</h3>
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{track.prompt}</p>
+        </div>
+        
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              {track.style}
+            </Badge>
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {track.duration}m
+            </span>
+          </div>
+          <span>{track.timestamp.toLocaleDateString()}</span>
+        </div>
+        
+        <div className="flex items-center justify-between pt-2 border-t border-border">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onActualPlay}
+              disabled={track.isGenerating || !track.audioUrl}
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onDownload}
+              disabled={track.isGenerating || !track.audioUrl}
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Heart className="w-4 h-4" />
+            </Button>
+          </div>
+          <ShareButtons 
+            title={track.title}
+            description={`Generated healing music: ${track.prompt.slice(0, 100)}...`}
+            className="ml-2"
+          />
+        </div>
+      </div>
+    </motion.div>
   );
 };
