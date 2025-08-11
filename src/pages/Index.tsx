@@ -54,7 +54,7 @@ const Index = () => {
         <AppSidebar currentView={currentView} onViewChange={handleViewChange} />
         
         <SidebarInset className="flex-1">
-          <TopBar />
+          <TopBar onViewChange={handleViewChange} />
           
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-6 py-6">

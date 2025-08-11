@@ -29,20 +29,31 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.log('Starting sign out process...');
+      
       // Clear local state immediately
       setUser(null);
       setSession(null);
       
+      // Clear any cached authentication data
+      try {
+        // Clear Supabase auth data from localStorage
+        localStorage.removeItem('sb-mtypyrsdbsoxrgzsxwsk-auth-token');
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+      } catch (storageErr) {
+        console.warn('Error clearing storage:', storageErr);
+      }
+      
       // Then attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
-      // Even if there's an error (like expired token), we've already cleared local state
-      // This ensures the UI updates correctly
       if (error) {
-        console.warn('Sign out warning:', error.message);
-        // Don't return the error as this is often just an expired token
+        console.warn('Supabase sign out warning:', error.message);
+        // Don't treat this as a failure - the local state is already cleared
       }
       
+      console.log('Sign out completed successfully');
       return { error: null };
     } catch (err) {
       console.error('Sign out error:', err);

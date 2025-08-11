@@ -7,7 +7,11 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
-export const TopBar: React.FC = () => {
+interface TopBarProps {
+  onViewChange?: (view: 'home' | 'music' | 'meditation' | 'library' | 'explore' | 'admin') => void;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({ onViewChange }) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,6 +26,11 @@ export const TopBar: React.FC = () => {
         console.log('Sign out result:', { error });
         
         if (!error) {
+          // Redirect to home page after successful sign out
+          if (onViewChange) {
+            onViewChange('home');
+          }
+          
           toast({
             title: "Signed out",
             description: "You've been successfully signed out.",
