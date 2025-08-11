@@ -15,10 +15,10 @@ export const MeditationStudio: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex h-screen">
         {/* Left Sidebar - Generator */}
-        <div className="w-80 bg-gray-800 border-r border-gray-700 flex-shrink-0">
+        <div className="w-80 bg-card border-r border-border flex-shrink-0">
           <GeneratorSidebar onSessionCreated={handleSessionCreated} />
         </div>
         
