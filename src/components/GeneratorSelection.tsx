@@ -27,21 +27,6 @@ export const GeneratorSelection: React.FC = () => {
     );
   }
 
-  if (selectedGenerator === 'meditation') {
-    return (
-      <div className="space-y-6">
-        <Button
-          onClick={() => setSelectedGenerator(null)}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Generator Selection
-        </Button>
-        <MeditationGenerator />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -59,7 +44,7 @@ export const GeneratorSelection: React.FC = () => {
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-1 gap-8 max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -93,44 +78,6 @@ export const GeneratorSelection: React.FC = () => {
                 style={{ background: 'var(--gradient-meditation)' }}
               >
                 Start Generating Music
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 p-4 rounded-full w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'var(--gradient-meditation)' }}>
-                <Brain className="h-10 w-10 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-card-foreground">
-                Generate Meditation Session
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Create guided meditation experiences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-muted-foreground">
-                Generate personalized guided meditation sessions tailored to your specific needs and goals.
-              </p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Guided meditation scripts</li>
-                <li>• Various meditation techniques</li>
-                <li>• Customizable session length</li>
-                <li>• Voice-guided experience</li>
-              </ul>
-              <Button
-                onClick={() => setSelectedGenerator('meditation')}
-                className="w-full mt-6 text-white"
-                style={{ background: 'var(--gradient-meditation)' }}
-              >
-                Start Generating Sessions
               </Button>
             </CardContent>
           </Card>

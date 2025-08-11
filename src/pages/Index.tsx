@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { TopBar } from '@/components/TopBar';
-import { GeneratorSelection } from '@/components/GeneratorSelection';
+import { MeditationGenerator } from '@/components/MeditationGenerator';
 import { MyLibrary } from '@/components/MyLibrary';
 import { MinimalHero } from '@/components/MinimalHero';
 import { CommunityGrid } from '@/components/CommunityGrid';
@@ -73,7 +73,7 @@ const Index = () => {
                 
                 {currentView === 'generate' && (
                   <ProtectedRoute>
-                    <GeneratorSelection />
+                    <MeditationGenerator />
                   </ProtectedRoute>
                 )}
                 
