@@ -206,16 +206,16 @@ Continue with this practice for the remainder of your ${duration}-minute session
 
   if (showChat) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-6">
+      <div className="min-h-screen bg-background text-foreground p-6">
         <Button 
           variant="ghost" 
           onClick={() => setShowChat(false)}
-          className="text-gray-300 hover:text-white hover:bg-gray-700 mb-4"
+          className="mb-4"
         >
           ← Back to Generator
         </Button>
-        <h2 className="text-xl font-semibold text-white mb-4">AI Prompt Enhancement</h2>
-        <div className="bg-gray-800 rounded-lg p-4">
+        <h2 className="text-xl font-semibold mb-4">AI Prompt Enhancement</h2>
+        <div className="bg-card rounded-lg p-4 border">
           <ChatInterface onSoundRecommendation={handleChatEnrichment} />
         </div>
       </div>
@@ -223,18 +223,18 @@ Continue with this practice for the remainder of your ${duration}-minute session
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex h-screen">
         {/* Left Sidebar - Generator */}
-        <div className="w-80 bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col">
+        <div className="w-80 bg-card border-r border-border flex-shrink-0 flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-gray-700">
-            <h1 className="text-xl font-semibold text-white mb-2">Meditation Session Generator</h1>
+          <div className="p-6 border-b border-border">
+            <h1 className="text-xl font-semibold mb-2">Meditation Session Generator</h1>
             
             {/* Session Selector */}
             <div className="relative">
               <Select value={sessionName} onValueChange={setSessionName}>
-                <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                   <ChevronDown className="w-4 h-4" />
                 </SelectTrigger>
@@ -250,16 +250,16 @@ Continue with this practice for the remainder of your ${duration}-minute session
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full bg-gray-700 p-1">
+              <TabsList className="w-full">
                 <TabsTrigger 
                   value="meditation" 
-                  className="flex-1 text-white data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                  className="flex-1"
                 >
                   Text to Meditation
                 </TabsTrigger>
                 <TabsTrigger 
                   value="sound" 
-                  className="flex-1 text-gray-400 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                  className="flex-1"
                 >
                   Sound Reference
                 </TabsTrigger>
@@ -268,12 +268,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
               <TabsContent value="meditation" className="space-y-6 mt-6">
                 {/* Prompt */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Prompt</label>
+                  <label className="block text-sm font-medium mb-2">Prompt</label>
                   <Textarea
                     placeholder="Please describe precise meditation goal of redefinition, mood, duration, background sounds, guidance style."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="min-h-[120px] bg-gray-700 border-gray-600 text-white placeholder-gray-400 resize-none"
+                    className="min-h-[120px] resize-none"
                     rows={5}
                   />
                 </div>
@@ -282,7 +282,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
                 <Button 
                   variant="outline"
                   onClick={() => setShowChat(true)}
-                  className="w-full border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+                  className="w-full"
                 >
                   <Lightbulb className="w-4 h-4 mr-2" />
                   Inspire Me
@@ -294,7 +294,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
                     <Badge
                       key={tag}
                       variant="outline"
-                      className="cursor-pointer border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                      className="cursor-pointer hover:bg-secondary"
                       onClick={() => addQuickTag(tag)}
                     >
                       {tag}
@@ -307,12 +307,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
                   {/* Duration */}
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         <Clock className="w-4 h-4 inline mr-1" />
                         Duration
                       </label>
                       <Select value={duration} onValueChange={setDuration}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                        <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -327,12 +327,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
 
                     {/* Outputs */}
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         <Music className="w-4 h-4 inline mr-1" />
                         Outputs
                       </label>
                       <Select value="audio-script" onValueChange={() => {}}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                        <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -346,12 +346,12 @@ Continue with this practice for the remainder of your ${duration}-minute session
 
                   {/* Quality */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium mb-2">
                       <Settings className="w-4 h-4 inline mr-1" />
                       High Fidelity
                     </label>
                     <Select value={quality} onValueChange={setQuality}>
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -365,7 +365,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
               </TabsContent>
 
               <TabsContent value="sound" className="mt-6">
-                <div className="text-center text-gray-400 py-8">
+                <div className="text-center text-muted-foreground py-8">
                   <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Sound reference functionality coming soon...</p>
                 </div>
@@ -374,7 +374,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
           </div>
 
           {/* Create Button */}
-          <div className="p-6 border-t border-gray-700">
+          <div className="p-6 border-t border-border">
             <Button 
               onClick={handleGenerate}
               disabled={isGenerating || !prompt.trim()}
@@ -393,40 +393,36 @@ Continue with this practice for the remainder of your ${duration}-minute session
         </div>
         
         {/* Right Panel - Session Library */}
-        <div className="flex-1 overflow-hidden bg-gray-900 flex flex-col">
+        <div className="flex-1 overflow-hidden bg-background flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-gray-700">
+          <div className="p-6 border-b border-border">
             <div className="flex items-center justify-between">
               <Tabs value={libraryTab} onValueChange={setLibraryTab}>
-                <TabsList className="bg-gray-800 p-1">
+                <TabsList>
                   <TabsTrigger 
-                    value="all" 
-                    className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                    value="all"
                   >
                     All
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="music" 
-                    className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                    value="music"
                   >
                     Music
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="sessions" 
-                    className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                    value="sessions"
                   >
                     Sessions
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="favorites" 
-                    className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                    value="favorites"
                   >
                     Favorites
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-muted-foreground">
                 Upgrade plan
               </div>
             </div>
@@ -439,7 +435,7 @@ Continue with this practice for the remainder of your ${duration}-minute session
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
               </div>
             ) : getFilteredSessions().length === 0 ? (
-              <div className="text-center text-gray-400 py-12">
+              <div className="text-center text-muted-foreground py-12">
                 <p className="text-lg mb-2">No {libraryTab === 'all' ? 'sessions' : libraryTab} found</p>
                 <p className="text-sm">Create your first meditation session to get started</p>
               </div>
@@ -505,7 +501,7 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, isPlaying, onPlay, b
 
   return (
     <div 
-      className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:bg-gray-750 transition-all duration-300 hover:scale-105 cursor-pointer"
+      className="bg-card border border-border rounded-lg overflow-hidden hover:bg-accent/10 transition-all duration-300 hover:scale-105 cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -525,7 +521,7 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, isPlaying, onPlay, b
             variant="secondary"
             size="lg"
             className={`
-              rounded-full w-16 h-16 p-0 bg-white/90 hover:bg-white text-gray-800
+              rounded-full w-16 h-16 p-0 bg-white/90 hover:bg-white text-foreground
               transition-all duration-300 hover:scale-110
               ${isHovered ? 'opacity-100' : 'opacity-80'}
             `}
@@ -567,23 +563,23 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, isPlaying, onPlay, b
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-medium text-white text-sm mb-1 line-clamp-2">
+        <h3 className="font-medium text-foreground text-sm mb-1 line-clamp-2">
           {session.title}
         </h3>
-        <p className="text-gray-400 text-xs">
+        <p className="text-muted-foreground text-xs">
           {session.duration} min
         </p>
         
         {/* Actions */}
         <div className="flex items-center justify-between mt-3">
-          <span className="text-xs text-gray-500 capitalize">
+          <span className="text-xs text-muted-foreground capitalize">
             {session.technique.replace('-', ' ')}
           </span>
           
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
             onClick={handleDownload}
           >
             <Download className="w-3 h-3" />
