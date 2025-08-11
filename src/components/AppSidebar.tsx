@@ -39,7 +39,6 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
     { id: 'home', title: 'Home', icon: Home, public: true },
     { id: 'music', title: 'Text to Healing Music', icon: Music, public: false, badge: 'NEW' },
     { id: 'meditation', title: 'Guided Meditation Creator', icon: Brain, public: false },
-    { id: 'generate-sound', title: 'Sound to Session', icon: Layers, public: false },
     { id: 'generate-effects', title: 'Effects & Enhancements', icon: Sparkles, public: false },
   ];
 
@@ -72,8 +71,12 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-secondary">
-            <Music className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+            <img 
+              src="/lovable-uploads/8e33c858-6943-45b3-aec5-2d2db143c0f5.png" 
+              alt="Indara AI Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           {!isCollapsed && (
             <div>
