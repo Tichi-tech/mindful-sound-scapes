@@ -10,6 +10,7 @@ import { ChevronDown, Lightbulb, Sparkles, Clock, Settings, Music, Play, Pause, 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
+import { ShareButtons } from './ui/share-buttons';
 import { AudioWaveform } from './meditation-studio/AudioWaveform';
 
 interface Session {
@@ -582,6 +583,12 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, isPlaying, onPlay, b
           >
             <Download className="w-3 h-3" />
           </Button>
+          
+          <ShareButtons 
+            title={session.title}
+            description={`Meditation session: ${session.technique.replace('-', ' ')} - ${session.duration} minutes`}
+            className="ml-2"
+          />
         </div>
       </div>
     </div>

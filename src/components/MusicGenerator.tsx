@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Wand2, Music, Clock, Sparkles, Play, Download, Heart, MessageCircle, Bot, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatInterface } from './chat/ChatInterface';
+import { ShareButtons } from './ui/share-buttons';
 import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedTrack {
@@ -435,6 +436,11 @@ export const MusicGenerator: React.FC = () => {
                           <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
                             <Heart className="w-4 h-4" />
                           </Button>
+                          <ShareButtons 
+                            title={track.title}
+                            description={`Generated healing music: ${track.prompt.slice(0, 100)}...`}
+                            className="ml-2"
+                          />
                         </>
                       )}
                     </div>
