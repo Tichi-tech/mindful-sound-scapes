@@ -28,12 +28,29 @@ export const useAuth = () => {
   }, []);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
+    try {
+      // Clear local state immediately
       setUser(null);
       setSession(null);
+      
+      // Then attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      // Even if there's an error (like expired token), we've already cleared local state
+      // This ensures the UI updates correctly
+      if (error) {
+        console.warn('Sign out warning:', error.message);
+        // Don't return the error as this is often just an expired token
+      }
+      
+      return { error: null };
+    } catch (err) {
+      console.error('Sign out error:', err);
+      // Still clear local state even if there's an error
+      setUser(null);
+      setSession(null);
+      return { error: null };
     }
-    return { error };
   };
 
   return {

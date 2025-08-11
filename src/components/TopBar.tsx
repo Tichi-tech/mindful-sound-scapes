@@ -13,15 +13,38 @@ export const TopBar: React.FC = () => {
   const { toast } = useToast();
 
   const handleAuthAction = async () => {
+    console.log('Auth action clicked, authenticated:', isAuthenticated);
+    
     if (isAuthenticated) {
-      const { error } = await signOut();
-      if (!error) {
+      console.log('Attempting to sign out...');
+      try {
+        const { error } = await signOut();
+        console.log('Sign out result:', { error });
+        
+        if (!error) {
+          toast({
+            title: "Signed out",
+            description: "You've been successfully signed out.",
+          });
+          console.log('Sign out successful');
+        } else {
+          console.error('Sign out error:', error);
+          toast({
+            title: "Sign out failed",
+            description: "There was an error signing out. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } catch (err) {
+        console.error('Sign out exception:', err);
         toast({
-          title: "Signed out",
-          description: "You've been successfully signed out.",
+          title: "Sign out failed", 
+          description: "There was an error signing out. Please try again.",
+          variant: "destructive"
         });
       }
     } else {
+      console.log('Navigating to auth page...');
       navigate('/auth');
     }
   };
